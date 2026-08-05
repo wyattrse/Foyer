@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlobalStyle } from "@/components/ui/GlobalStyle";
 import { BrandMark } from "@/components/ui/BrandMark";
@@ -51,8 +52,17 @@ export default function KioskPage() {
   return (
     <div className="anim-fadein" style={{ background: KIOSK.bg, minHeight: "100vh", fontFamily: "'Space Grotesk', sans-serif" }}>
       <GlobalStyle />
-      <div className="flex items-center justify-center px-6 py-4" style={{ background: KIOSK.surface, borderBottom: `1px solid ${KIOSK.border}` }}>
+      <div className="flex items-center justify-between px-6 py-4" style={{ background: KIOSK.surface, borderBottom: `1px solid ${KIOSK.border}` }}>
         <BrandMark size="sm" ink={KIOSK.ink} arc={KIOSK.border} />
+        <Link
+          href="/dashboard"
+          aria-label="Exit Open House mode"
+          title="Exit Open House mode"
+          className="press w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: KIOSK.bg, border: `1px solid ${KIOSK.border}`, color: KIOSK.soft }}
+        >
+          <X size={18} />
+        </Link>
       </div>
       <div className="max-w-md mx-auto pt-10 px-6 pb-12">
         {!thanks && (
