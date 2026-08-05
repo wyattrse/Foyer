@@ -107,6 +107,21 @@ export function DashboardApp({ userId }: { userId: string }) {
     }
   }, [supabase]);
 
+  // Live sync: another device (e.g. the kiosk) creating/changing a lead
+  // updates this dashboard without a manual refresh. RLS already scopes
+  // this to the agent's own leads.
+  useEffect(() => {
+    const channel = supabase
+      .channel("leads-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads", filter: `agent_id=eq.${userId}` }, () => {
+        refreshLeads();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, userId, refreshLeads]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
