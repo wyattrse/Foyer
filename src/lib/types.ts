@@ -22,6 +22,28 @@ export interface Agent {
   created_at: string;
 }
 
+export type AgreementType = "sale" | "rental";
+
+export interface Listing {
+  id: string;
+  agent_id: string;
+  address: string;
+  price: number | null;
+  agreement_type: AgreementType;
+  lat: number | null;
+  lng: number | null;
+  created_at: string;
+}
+
+// Minimal public-facing shape from the `kiosk_listings` view -- no price,
+// no other agent data. Used only by the unauthenticated kiosk dropdown.
+export interface KioskListing {
+  id: string;
+  agent_id: string;
+  address: string;
+  agreement_type: AgreementType;
+}
+
 export interface Lead {
   id: string;
   agent_id: string;
@@ -39,6 +61,7 @@ export interface Lead {
   sort_order: number | null;
   deleted_at: string | null;
   possible_duplicate_of: string | null;
+  listing_id: string | null;
   created_at: string;
 }
 

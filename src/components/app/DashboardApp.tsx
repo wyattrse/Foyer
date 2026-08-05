@@ -14,6 +14,7 @@ import {
   BellRing,
   BarChart3,
   Search,
+  Building2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GlobalStyle } from "@/components/ui/GlobalStyle";
@@ -29,6 +30,7 @@ import { TasksTab } from "@/components/tabs/TasksTab";
 import { TemplatesTab } from "@/components/tabs/TemplatesTab";
 import { CommissionTab } from "@/components/tabs/CommissionTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
+import { ListingsTab } from "@/components/tabs/ListingsTab";
 import { CARD, COLORS, inputStyle } from "@/lib/theme";
 import { STAGES, SOURCES } from "@/lib/constants";
 import { findDuplicateLead, matchesSearch } from "@/lib/scoring";
@@ -38,11 +40,13 @@ import * as interactionsApi from "@/lib/data/interactions";
 import * as tasksApi from "@/lib/data/tasks";
 import * as templatesApi from "@/lib/data/templates";
 import * as agentApi from "@/lib/data/agent";
-import type { Agent, Interaction, LeadFormValues, LeadWithStatus, Task, Template } from "@/lib/types";
+import * as listingsApi from "@/lib/data/listings";
+import type { Agent, AgreementType, Interaction, LeadFormValues, LeadWithStatus, Listing, Task, Template } from "@/lib/types";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { key: "add", label: "Quick Add", icon: UserPlus },
+  { key: "listings", label: "Listings", icon: Building2 },
   { key: "tasks", label: "Tasks", icon: ListTodo },
   { key: "templates", label: "Templates", icon: MessageSquareText },
   { key: "commission", label: "Commission", icon: DollarSign },
@@ -70,6 +74,7 @@ export function DashboardApp({ userId }: { userId: string }) {
   const [leads, setLeads] = useState<LeadWithStatus[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<string>("dashboard");
@@ -98,16 +103,18 @@ export function DashboardApp({ userId }: { userId: string }) {
     (async () => {
       setLoading(true);
       try {
-        const [leadsData, tasksData, templatesData, agentData] = await Promise.all([
+        const [leadsData, tasksData, templatesData, agentData, listingsData] = await Promise.all([
           leadsApi.fetchLeads(supabase),
           tasksApi.fetchTasks(supabase),
           templatesApi.fetchTemplates(supabase),
           agentApi.fetchAgent(supabase, userId),
+          listingsApi.fetchListings(supabase),
         ]);
         setLeads(leadsData);
         setTasks(tasksData);
         setTemplates(templatesData);
         setAgent(agentData);
+        setListings(listingsData);
       } catch {
         setError("Couldn't load your data.");
       } finally {
@@ -245,6 +252,39 @@ export function DashboardApp({ userId }: { userId: string }) {
     }
   };
 
+  const addListing = async (form: { address: string; price: number | null; agreementType: AgreementType }) => {
+    try {
+      const l = await listingsApi.insertListing(supabase, userId, form);
+      setListings((prev) => [l, ...prev]);
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+    }
+  };
+  const updateListingHandler = async (id: string, form: { address: string; price: number | null; agreementType: AgreementType }) => {
+    try {
+      const updated = await listingsApi.updateListing(supabase, id, form);
+      setListings((prev) => prev.map((l) => (l.id === id ? updated : l)));
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+    }
+  };
+  const deleteListingHandler = async (id: string) => {
+    setListings((prev) => prev.filter((l) => l.id !== id));
+    try {
+      await listingsApi.deleteListing(supabase, id);
+    } catch {
+      setError("Couldn't delete — try again.");
+      await refreshListings();
+    }
+  };
+  const refreshListings = async () => {
+    try {
+      setListings(await listingsApi.fetchListings(supabase));
+    } catch {
+      setError("Couldn't load listings.");
+    }
+  };
+
   const saveSettings = async (patch: { name: string; brokerage: string; commission_split: number }) => {
     try {
       const updated = await agentApi.updateAgent(supabase, userId, patch);
@@ -357,6 +397,20 @@ export function DashboardApp({ userId }: { userId: string }) {
                     }}
                   />
                 </div>
+              ) : view === "listings" ? (
+                <>
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                    Listings
+                  </h1>
+                  <ListingsTab
+                    listings={listings}
+                    leads={leads}
+                    onAdd={addListing}
+                    onUpdate={updateListingHandler}
+                    onDelete={deleteListingHandler}
+                    onSelectLead={(l) => setSelectedId(l.id)}
+                  />
+                </>
               ) : view === "tasks" ? (
                 <>
                   <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">

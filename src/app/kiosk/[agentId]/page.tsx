@@ -1,25 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchKioskListings } from "@/lib/data/listings";
 import { GlobalStyle } from "@/components/ui/GlobalStyle";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { QRPlaceholder } from "@/components/ui/QRPlaceholder";
 import { LeadForm } from "@/components/leads/LeadForm";
-import { COLORS, KIOSK } from "@/lib/theme";
-import type { LeadFormValues } from "@/lib/types";
+import { COLORS, KIOSK, inputStyle } from "@/lib/theme";
+import type { KioskListing, LeadFormValues } from "@/lib/types";
 
 // Genuinely unauthenticated route -- no session, no read access to anything.
 // Insert is only permitted by the "kiosk insert-only new leads" RLS policy
-// (anon role, insert-only, zero read access -- see spec §5).
+// (anon role, insert-only, zero read access -- see spec §5). The listing
+// dropdown reads from the kiosk_listings view, which deliberately bypasses
+// the agent-only `listings` table RLS to expose just id/address/type.
 export default function KioskPage() {
   const params = useParams<{ agentId: string }>();
   const agentId = params.agentId;
+  const supabase = useMemo(() => createClient(), []);
   const [thanks, setThanks] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [listings, setListings] = useState<KioskListing[]>([]);
+  const [listingId, setListingId] = useState<string>("");
+
+  useEffect(() => {
+    fetchKioskListings(supabase, agentId)
+      .then((data) => {
+        setListings(data);
+        if (data.length === 1) setListingId(data[0].id);
+      })
+      .catch(() => {
+        // Non-fatal -- the sign-in form still works without a listing selected.
+      });
+  }, [supabase, agentId]);
 
   const kCard = {
     background: KIOSK.surface,
@@ -30,7 +47,6 @@ export default function KioskPage() {
 
   const handleSubmit = async (form: LeadFormValues) => {
     setError(null);
-    const supabase = createClient();
     const { error } = await supabase.from("leads").insert({
       agent_id: agentId,
       name: form.name.trim(),
@@ -40,6 +56,7 @@ export default function KioskPage() {
       timeline: form.timeline,
       has_agent: form.hasAgent,
       notes: form.notes.trim() || null,
+      listing_id: listingId || null,
     });
     if (error) {
       setError("Couldn't submit — please ask a staff member for help.");
@@ -73,6 +90,27 @@ export default function KioskPage() {
             <p className="text-xs mt-1 uppercase tracking-wide" style={{ color: KIOSK.soft }}>
               Just a few details so we can follow up.
             </p>
+          </div>
+        )}
+
+        {!thanks && listings.length > 1 && (
+          <div className="mb-6">
+            <label className="block text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: KIOSK.soft, fontSize: 10.5 }}>
+              Which property is this?
+            </label>
+            <select
+              value={listingId}
+              onChange={(e) => setListingId(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm outline-none"
+              style={{ ...inputStyle, background: KIOSK.input, border: `1px solid ${KIOSK.border}`, color: KIOSK.ink }}
+            >
+              <option value="">Select a property...</option>
+              {listings.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.address}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
