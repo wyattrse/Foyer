@@ -20,7 +20,8 @@
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm\"; npm config get prefix; npm ls -g --depth=0 2>&1 | Out-String -Width 200)",
       "Bash(ls -la \"/c/Users/orhse/AppData/Roaming/npm/\" | grep -i vercel)",
       "Bash(git push *)",
-      "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Out-String -Width 250; npm run lint 2>&1 | Out-String -Width 250)"
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Out-String -Width 250; npm run lint 2>&1 | Out-String -Width 250)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm\"; npx tsc --noEmit -p tsconfig.json 2>&1 | Out-String -Width 200)"
     ]
   }
 }
