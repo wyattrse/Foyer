@@ -1,14 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Next.js 16 renamed Middleware to Proxy (same mechanism, new file/export name).
-// This refreshes the Supabase session cookie on every request and gates the
-// authenticated dashboard from the public/auth routes.
+// Using the classic `middleware.ts` convention instead of Next.js 16's new
+// `proxy.ts` -- the new name hit a Vercel deployment bug (env vars weren't
+// reaching it at runtime: "Your project's URL and Key are required to
+// create a Supabase client!", even though they were correctly set). Next.js
+// still supports this name for compatibility, and it's Vercel's long-
+// established, well-tested path. Same logic as before either way: refreshes
+// the Supabase session cookie on every request and gates the authenticated
+// dashboard from the public/auth routes.
 
 const PROTECTED_PREFIXES = ["/dashboard"];
 const AUTH_ROUTES = ["/login"];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
