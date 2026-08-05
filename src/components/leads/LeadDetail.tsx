@@ -186,7 +186,7 @@ export function LeadDetail({
 
         {editing && editData ? (
           <div className="space-y-3 mb-5 p-4" style={CARD}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <FieldLabel>Phone</FieldLabel>
                 <input value={editData.phone} onChange={setF("phone")} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle} />
@@ -206,7 +206,7 @@ export function LeadDetail({
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <FieldLabel>Timeline</FieldLabel>
                 <select value={editData.timeline} onChange={setF("timeline")} className="w-full px-3 py-2 text-sm outline-none" style={inputStyle}>

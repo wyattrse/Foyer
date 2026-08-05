@@ -115,7 +115,7 @@ export function ListingsTab({
                     className="w-full px-3 py-2 text-sm outline-none font-medium"
                     style={inputStyle}
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="number"
                       min="0"
@@ -219,7 +219,7 @@ export function ListingsTab({
               style={inputStyle}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <FieldLabel>{priceLabel(form.agreementType)}</FieldLabel>
               <input

@@ -11,7 +11,7 @@ export function CommissionTab({ leads, agent }: { leads: LeadWithStatus[]; agent
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 mb-6 max-w-md">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 max-w-md">
         <StatCard label={`Pending (${pending.length} deals)`} value={sum(pending)} color={COLORS.warm} />
         <StatCard label={`Earned (${closed.length} deals)`} value={sum(closed)} color={COLORS.accentBright} />
       </div>

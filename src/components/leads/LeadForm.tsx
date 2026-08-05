@@ -94,7 +94,7 @@ export function LeadForm({
           style={{ ...t.input, borderColor: touched && !form.name.trim() ? t.errColor : t.border }}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           {lbl("Phone")}
           <input value={form.phone} onChange={set("phone")} placeholder="(555) 000-0000" className="w-full px-3 py-2.5 text-sm outline-none" style={t.input} />
@@ -116,7 +116,7 @@ export function LeadForm({
           </select>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           {lbl("Buying timeline")}
           <select value={form.timeline} onChange={set("timeline")} className="w-full px-3 py-2.5 text-sm outline-none" style={t.input}>
