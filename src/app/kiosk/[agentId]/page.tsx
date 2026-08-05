@@ -93,27 +93,6 @@ export default function KioskPage() {
           </div>
         )}
 
-        {!thanks && listings.length > 1 && (
-          <div className="mb-6">
-            <label className="block text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: KIOSK.soft, fontSize: 10.5 }}>
-              Which property is this?
-            </label>
-            <select
-              value={listingId}
-              onChange={(e) => setListingId(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm outline-none"
-              style={{ ...inputStyle, background: KIOSK.input, border: `1px solid ${KIOSK.border}`, color: KIOSK.ink }}
-            >
-              <option value="">Select a property...</option>
-              {listings.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.address}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {!thanks && (
           <div className="flex flex-col items-center mb-6 p-5" style={kCard}>
             <QRPlaceholder light={KIOSK.surface} dark={KIOSK.ink} />
@@ -123,6 +102,24 @@ export default function KioskPage() {
             <p className="text-[10px] mt-1 uppercase tracking-wide" style={{ color: COLORS.accent }}>
               Placeholder — swap in your real QR
             </p>
+          </div>
+        )}
+
+        {!thanks && listings.length > 1 && (
+          <div className="mb-6">
+            <select
+              value={listingId}
+              onChange={(e) => setListingId(e.target.value)}
+              className="w-full px-4 py-3.5 text-lg font-bold outline-none"
+              style={{ ...inputStyle, background: KIOSK.input, border: `1px solid ${KIOSK.border}`, color: KIOSK.ink }}
+            >
+              <option value="">Select a property...</option>
+              {listings.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.address}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
