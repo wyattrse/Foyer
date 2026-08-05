@@ -468,10 +468,12 @@ export function DashboardApp({ userId }: { userId: string }) {
                         <button
                           key={key}
                           onClick={() => setSubtab(key)}
-                          className={`navtab press flex items-center gap-1.5 pb-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap flex-shrink-0 ${subtab === key ? "active" : ""}`}
+                          className={`navtab press flex items-center gap-1.5 py-2 sm:py-0 sm:pb-1 text-sm sm:text-xs font-medium uppercase tracking-wide whitespace-nowrap flex-shrink-0 ${subtab === key ? "active" : ""}`}
                           style={{ color: subtab === key ? COLORS.ink : COLORS.inkSoft }}
                         >
-                          <Icon size={13} /> {lbl}
+                          <Icon size={15} className="sm:hidden" />
+                          <Icon size={13} className="hidden sm:block" />
+                          {lbl}
                         </button>
                       ))}
                     </div>
@@ -494,7 +496,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                           <button
                             key={c.key}
                             onClick={() => setBucketFilter(c.key)}
-                            className="press px-3 py-1.5 text-xs font-medium uppercase tracking-wide"
+                            className="press px-3.5 py-2 sm:px-3 sm:py-1.5 text-sm sm:text-xs font-medium uppercase tracking-wide"
                             style={{
                               color: bucketFilter === c.key ? "#FBF3EF" : COLORS.inkSoft,
                               background: bucketFilter === c.key ? COLORS.accent : COLORS.surface2,
