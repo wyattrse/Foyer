@@ -14,9 +14,11 @@ export function BrandMark({
   return (
     <div className="flex items-center gap-2.5 select-none">
       <svg width={px} height={px} viewBox="0 0 40 40" fill="none">
+        <path d="M5 34 L33 34" stroke={arc} strokeWidth={big ? 2 : 1.5} strokeLinecap="round" />
         <path d="M8 6 L8 34" stroke={ink} strokeWidth={big ? 3 : 2.5} strokeLinecap="round" />
-        <path d="M8 6 L30 20" stroke={COLORS.accent} strokeWidth={big ? 3 : 2.5} strokeLinecap="round" />
-        <path d="M8 34 A28 28 0 0 0 30 20" stroke={arc} strokeWidth={big ? 2 : 1.5} fill="none" />
+        <path d="M8 6 L29 19" stroke={COLORS.accent} strokeWidth={big ? 3 : 2.5} strokeLinecap="round" />
+        <circle cx="23.5" cy="15.6" r={big ? 1.8 : 1.4} fill={COLORS.accent} />
+        <path d="M8 34 A27 27 0 0 0 29 19" stroke={arc} strokeWidth={big ? 2 : 1.5} fill="none" />
       </svg>
       <span
         style={{
