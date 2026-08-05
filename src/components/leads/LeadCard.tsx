@@ -20,7 +20,7 @@ export function LeadCard({
     <div
       {...dragProps}
       onClick={onClick}
-      className="mark anim-fadeup w-full text-left p-3.5 mb-2.5 cursor-pointer"
+      className="mark anim-fadeup w-full text-left p-3 sm:p-3.5 mb-2 sm:mb-2.5 cursor-pointer"
       style={{ ...CARD_SM, borderColor: status === "overdue" ? COLORS.accentBright + "70" : COLORS.border, animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-3">

@@ -27,13 +27,13 @@ export function Board({
     );
   }
   return (
-    <div className="flex flex-col sm:flex-row gap-6 sm:gap-4 sm:overflow-x-auto pb-4">
+    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:overflow-x-auto pb-4">
       {groups.map((g, gi) => {
         const groupLeads = leads.filter((l) => l[groupField] === g).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         return (
           <div
             key={g}
-            className="w-full sm:w-64 sm:flex-shrink-0"
+            className={`w-full sm:w-64 sm:flex-shrink-0 sm:block ${groupLeads.length === 0 ? "hidden" : ""}`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();

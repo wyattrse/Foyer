@@ -335,7 +335,7 @@ export function DashboardApp({ userId }: { userId: string }) {
       <GlobalStyle />
 
       <div className="sticky top-0 z-20" style={{ background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}` }}>
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-3 px-3 sm:px-6 py-2.5 sm:py-3">
           <BrandMark size="sm" />
           <a
             href={`/kiosk/${userId}`}
@@ -348,7 +348,7 @@ export function DashboardApp({ userId }: { userId: string }) {
             <QrCode size={15} /> <span className="hidden sm:inline">Launch </span>Open House
           </a>
         </div>
-        <div className="flex gap-4 sm:gap-5 px-4 sm:px-6 pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="flex gap-4 sm:gap-5 px-3 sm:px-6 pb-2.5 sm:pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {NAV_ITEMS.map(({ key, label: lbl, icon: Icon }) => (
             <button
               key={key}
@@ -362,7 +362,7 @@ export function DashboardApp({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6">
+      <div className="p-3 sm:p-6">
         <div className="max-w-5xl mx-auto">
           {error && (
             <div className="mb-4 text-xs px-3 py-2" style={{ background: COLORS.accentBright + "18", color: COLORS.accentBright, borderRadius: 5 }}>
@@ -399,7 +399,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                 </div>
               ) : view === "listings" ? (
                 <>
-                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Listings
                   </h1>
                   <ListingsTab
@@ -413,35 +413,35 @@ export function DashboardApp({ userId }: { userId: string }) {
                 </>
               ) : view === "tasks" ? (
                 <>
-                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Tasks
                   </h1>
                   <TasksTab tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} />
                 </>
               ) : view === "templates" ? (
                 <>
-                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Templates
                   </h1>
                   <TemplatesTab templates={templates} onAdd={addTemplate} onUpdate={updateTemplate} onDelete={deleteTemplate} />
                 </>
               ) : view === "commission" ? (
                 <>
-                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Commission
                   </h1>
                   <CommissionTab leads={leads} agent={agent} />
                 </>
               ) : view === "settings" ? (
                 <>
-                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-5">
+                  <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Settings
                   </h1>
                   <SettingsTab agent={agent} onSave={saveSettings} onSignOut={signOut} />
                 </>
               ) : (
                 <>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3 pb-4" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-5 gap-2 sm:gap-3 pb-3 sm:pb-4" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
                     <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl">
                       Dashboard
                     </h1>
@@ -460,7 +460,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                   </div>
 
                   {showFilters && (
-                    <div className="flex items-center gap-3 mb-5 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5 flex-wrap">
                       <div className="relative flex-1 min-w-[180px] max-w-xs">
                         <Search size={14} style={{ color: COLORS.inkSoft, position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
                         <input
