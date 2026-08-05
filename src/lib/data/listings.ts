@@ -7,14 +7,25 @@ export async function fetchListings(supabase: SupabaseClient): Promise<Listing[]
   return data as Listing[];
 }
 
+async function geocode(address: string): Promise<{ lat: number | null; lng: number | null }> {
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(address)}`);
+    if (!res.ok) return { lat: null, lng: null };
+    return await res.json();
+  } catch {
+    return { lat: null, lng: null };
+  }
+}
+
 export async function insertListing(
   supabase: SupabaseClient,
   agentId: string,
   form: { address: string; price: number | null; agreementType: Listing["agreement_type"] },
 ): Promise<Listing> {
+  const { lat, lng } = await geocode(form.address);
   const { data, error } = await supabase
     .from("listings")
-    .insert({ agent_id: agentId, address: form.address, price: form.price, agreement_type: form.agreementType })
+    .insert({ agent_id: agentId, address: form.address, price: form.price, agreement_type: form.agreementType, lat, lng })
     .select()
     .single();
   if (error) throw error;
@@ -26,9 +37,10 @@ export async function updateListing(
   id: string,
   form: { address: string; price: number | null; agreementType: Listing["agreement_type"] },
 ): Promise<Listing> {
+  const { lat, lng } = await geocode(form.address);
   const { data, error } = await supabase
     .from("listings")
-    .update({ address: form.address, price: form.price, agreement_type: form.agreementType })
+    .update({ address: form.address, price: form.price, agreement_type: form.agreementType, lat, lng })
     .eq("id", id)
     .select()
     .single();

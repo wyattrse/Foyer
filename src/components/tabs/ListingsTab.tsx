@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, MapPin } from "lucide-react";
 import { CARD_SM, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, Pill, FieldLabel } from "@/components/ui/Basics";
+import { ListingsMap } from "@/components/listings/ListingsMap";
 import type { AgreementType, LeadWithStatus, Listing } from "@/lib/types";
+
+const AGREEMENT_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "sale", label: "Sale" },
+  { key: "rental", label: "Rental" },
+] as const;
 
 interface ListingForm {
   address: string;
@@ -43,6 +50,12 @@ export function ListingsTab({
   const [form, setForm] = useState<ListingForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ListingForm>(EMPTY_FORM);
+  const [agreementFilter, setAgreementFilter] = useState<"all" | AgreementType>("all");
+
+  const filteredListings = useMemo(
+    () => (agreementFilter === "all" ? listings : listings.filter((l) => l.agreement_type === agreementFilter)),
+    [listings, agreementFilter],
+  );
 
   const toPatch = (f: ListingForm) => ({
     address: f.address.trim(),
@@ -68,8 +81,28 @@ export function ListingsTab({
 
   return (
     <div className="max-w-xl">
+      <ListingsMap listings={filteredListings} />
+
+      <div className="flex gap-1.5 mb-4">
+        {AGREEMENT_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setAgreementFilter(f.key)}
+            className="press px-3 py-1.5 text-xs font-medium uppercase tracking-wide"
+            style={{
+              color: agreementFilter === f.key ? "#FBF3EF" : COLORS.inkSoft,
+              background: agreementFilter === f.key ? COLORS.accent : COLORS.surface2,
+              border: `1px solid ${agreementFilter === f.key ? COLORS.accent : COLORS.border}`,
+              borderRadius: 5,
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-2 mb-4">
-        {listings.map((l, idx) => {
+        {filteredListings.map((l, idx) => {
           const associatedLeads = leads.filter((lead) => lead.listing_id === l.id);
           return (
             <div key={l.id} className="mark anim-fadeup p-4" style={{ ...CARD_SM, animationDelay: `${idx * 40}ms` }}>
@@ -158,6 +191,11 @@ export function ListingsTab({
             </div>
           );
         })}
+        {filteredListings.length === 0 && listings.length > 0 && (
+          <p className="text-sm italic" style={{ color: COLORS.inkSoft }}>
+            No {agreementFilter} listings.
+          </p>
+        )}
         {listings.length === 0 && (
           <p className="text-sm italic" style={{ color: COLORS.inkSoft }}>
             No listings yet — add the property you&apos;re holding an open house for, and it&apos;ll show up as an option on your kiosk sign-in.

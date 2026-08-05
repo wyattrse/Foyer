@@ -14,7 +14,8 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git config *)",
-      "Bash(ls '/c/Users/orhse/.claude/projects/C--Users-orhse-Desktop-foyer-app/memory/')"
+      "Bash(ls '/c/Users/orhse/.claude/projects/C--Users-orhse-Desktop-foyer-app/memory/')",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\nodejs;$env:APPDATA\\\\npm\"; npm install leaflet 2>&1 | Select-Object -Last 5; npm install -D @types/leaflet 2>&1 | Select-Object -Last 5)"
     ]
   }
 }
