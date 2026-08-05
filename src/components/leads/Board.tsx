@@ -33,7 +33,7 @@ export function Board({
         return (
           <div
             key={g}
-            className={`w-full sm:w-64 sm:flex-shrink-0 sm:block ${groupLeads.length === 0 ? "hidden" : ""}`}
+            className={`w-full sm:w-64 sm:flex-shrink-0 sm:block p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 bg-[#1D1B17] sm:bg-transparent border-[#38342A] ${groupLeads.length === 0 ? "hidden" : ""}`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();

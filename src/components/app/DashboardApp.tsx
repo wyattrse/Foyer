@@ -31,6 +31,7 @@ import { TemplatesTab } from "@/components/tabs/TemplatesTab";
 import { CommissionTab } from "@/components/tabs/CommissionTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { ListingsTab } from "@/components/tabs/ListingsTab";
+import { MobileNav } from "@/components/app/MobileNav";
 import { CARD, COLORS, inputStyle } from "@/lib/theme";
 import { STAGES, SOURCES } from "@/lib/constants";
 import { findDuplicateLead, matchesSearch } from "@/lib/scoring";
@@ -87,6 +88,13 @@ export function DashboardApp({ userId }: { userId: string }) {
   const [search, setSearch] = useState("");
   const [bucketFilter, setBucketFilter] = useState<string>("all");
   const { toasts, pushToast, dismissToast } = useToasts();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const refreshLeads = useCallback(async () => {
     try {
@@ -335,20 +343,30 @@ export function DashboardApp({ userId }: { userId: string }) {
       <GlobalStyle />
 
       <div className="sticky top-0 z-20" style={{ background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}` }}>
-        <div className="flex items-center justify-between gap-3 px-3 sm:px-6 py-2.5 sm:py-3">
+        {/* Mobile: hamburger + centered logo that shrinks on scroll */}
+        <div className={`sm:hidden flex items-center justify-between px-3 transition-all duration-300 ${scrolled ? "py-1.5" : "py-4"}`}>
+          <MobileNav navItems={NAV_ITEMS} activeView={view} onSelect={setView} kioskHref={`/kiosk/${userId}`} />
+          <div className={`transition-transform duration-300 ${scrolled ? "scale-[0.55]" : "scale-100"}`}>
+            <BrandMark size="lg" />
+          </div>
+          <span className="w-9 flex-shrink-0" aria-hidden />
+        </div>
+
+        {/* Desktop: unchanged horizontal nav */}
+        <div className="hidden sm:flex items-center justify-between gap-3 px-6 py-3">
           <BrandMark size="sm" />
           <a
             href={`/kiosk/${userId}`}
             target="_blank"
             rel="noopener noreferrer"
             title="Open the client-facing kiosk sign-in in a new tab"
-            className="press flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0"
+            className="press flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap flex-shrink-0"
             style={{ background: COLORS.accent, color: "#FBF3EF", borderRadius: 5 }}
           >
-            <QrCode size={15} /> <span className="hidden sm:inline">Launch </span>Open House
+            <QrCode size={15} /> Launch Open House
           </a>
         </div>
-        <div className="flex gap-4 sm:gap-5 px-3 sm:px-6 pb-2.5 sm:pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="hidden sm:flex gap-5 px-6 pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {NAV_ITEMS.map(({ key, label: lbl, icon: Icon }) => (
             <button
               key={key}
