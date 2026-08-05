@@ -1,0 +1,107 @@
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { Check } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { GlobalStyle } from "@/components/ui/GlobalStyle";
+import { BrandMark } from "@/components/ui/BrandMark";
+import { QRPlaceholder } from "@/components/ui/QRPlaceholder";
+import { LeadForm } from "@/components/leads/LeadForm";
+import { COLORS, KIOSK } from "@/lib/theme";
+import type { LeadFormValues } from "@/lib/types";
+
+// Genuinely unauthenticated route -- no session, no read access to anything.
+// Insert is only permitted by the "kiosk insert-only new leads" RLS policy
+// (anon role, insert-only, zero read access -- see spec §5).
+export default function KioskPage() {
+  const params = useParams<{ agentId: string }>();
+  const agentId = params.agentId;
+  const [thanks, setThanks] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const kCard = {
+    background: KIOSK.surface,
+    borderRadius: 8,
+    border: `1px solid ${KIOSK.border}`,
+    boxShadow: "0 10px 28px rgba(28,27,23,0.08)",
+  };
+
+  const handleSubmit = async (form: LeadFormValues) => {
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.from("leads").insert({
+      agent_id: agentId,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      source: "Open House",
+      timeline: form.timeline,
+      has_agent: form.hasAgent,
+      notes: form.notes.trim() || null,
+    });
+    if (error) {
+      setError("Couldn't submit — please ask a staff member for help.");
+      return;
+    }
+    setThanks(true);
+    setTimeout(() => setThanks(false), 2600);
+  };
+
+  return (
+    <div className="anim-fadein" style={{ background: KIOSK.bg, minHeight: "100vh", fontFamily: "'Space Grotesk', sans-serif" }}>
+      <GlobalStyle />
+      <div className="flex items-center justify-center px-6 py-4" style={{ background: KIOSK.surface, borderBottom: `1px solid ${KIOSK.border}` }}>
+        <BrandMark size="sm" ink={KIOSK.ink} arc={KIOSK.border} />
+      </div>
+      <div className="max-w-md mx-auto pt-10 px-6 pb-12">
+        {!thanks && (
+          <div className="text-center mb-6">
+            <h1 style={{ fontFamily: "'Fraunces', serif", color: KIOSK.ink }} className="text-2xl">
+              Welcome — sign in
+            </h1>
+            <p className="text-xs mt-1 uppercase tracking-wide" style={{ color: KIOSK.soft }}>
+              Just a few details so we can follow up.
+            </p>
+          </div>
+        )}
+
+        {!thanks && (
+          <div className="flex flex-col items-center mb-6 p-5" style={kCard}>
+            <QRPlaceholder light={KIOSK.surface} dark={KIOSK.ink} />
+            <p className="text-xs mt-3 text-center" style={{ color: KIOSK.ink }}>
+              Scan to save my contact card
+            </p>
+            <p className="text-[10px] mt-1 uppercase tracking-wide" style={{ color: COLORS.accent }}>
+              Placeholder — swap in your real QR
+            </p>
+          </div>
+        )}
+
+        {thanks ? (
+          <div className="anim-popin flex flex-col items-center text-center p-10" style={kCard}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4" style={{ background: COLORS.accent + "18" }}>
+              <Check size={22} style={{ color: COLORS.accent }} />
+            </div>
+            <h2 style={{ fontFamily: "'Fraunces', serif", color: KIOSK.ink }} className="text-xl mb-1">
+              Thanks — you&apos;re all set!
+            </h2>
+            <p className="text-sm" style={{ color: KIOSK.soft }}>
+              We&apos;ll be in touch soon.
+            </p>
+          </div>
+        ) : (
+          <div className="p-6" style={kCard}>
+            <LeadForm mode="capture" onSubmit={handleSubmit} light />
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 text-xs px-3 py-2 text-center" style={{ background: COLORS.accent + "18", color: COLORS.accent, borderRadius: 5 }}>
+            {error}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
