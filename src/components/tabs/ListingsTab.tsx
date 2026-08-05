@@ -51,6 +51,7 @@ export function ListingsTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ListingForm>(EMPTY_FORM);
   const [agreementFilter, setAgreementFilter] = useState<"all" | AgreementType>("all");
+  const [focusedListingId, setFocusedListingId] = useState<string | null>(null);
 
   const filteredListings = useMemo(
     () => (agreementFilter === "all" ? listings : listings.filter((l) => l.agreement_type === agreementFilter)),
@@ -81,7 +82,7 @@ export function ListingsTab({
 
   return (
     <div className="max-w-xl">
-      <ListingsMap listings={filteredListings} />
+      <ListingsMap listings={filteredListings} focusedListingId={focusedListingId} />
 
       <div className="flex gap-1.5 mb-4">
         {AGREEMENT_FILTERS.map((f) => (
@@ -146,8 +147,12 @@ export function ListingsTab({
               ) : (
                 <>
                   <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-start gap-2 min-w-0">
-                      <MapPin size={14} style={{ color: COLORS.inkSoft, marginTop: 2, flexShrink: 0 }} />
+                    <button
+                      onClick={() => setFocusedListingId(l.id)}
+                      className="flex items-start gap-2 min-w-0 text-left press"
+                      title="Show on map"
+                    >
+                      <MapPin size={14} style={{ color: COLORS.accentBright, marginTop: 2, flexShrink: 0 }} />
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate" style={{ color: COLORS.ink }}>
                           {l.address}
@@ -156,7 +161,7 @@ export function ListingsTab({
                           {formatPrice(l.price, l.agreement_type)}
                         </p>
                       </div>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       <Pill color={l.agreement_type === "rental" ? COLORS.warm : COLORS.cold}>{l.agreement_type}</Pill>
                       <button onClick={() => startEdit(l)} style={{ color: COLORS.inkSoft }}>

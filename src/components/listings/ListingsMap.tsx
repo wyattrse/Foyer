@@ -5,12 +5,33 @@ import type * as LeafletNS from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Listing } from "@/lib/types";
 
+function priceBadgeLabel(l: Listing) {
+  if (l.price == null) return l.agreement_type === "rental" ? "Rental" : "For sale";
+  const short = l.price >= 1000 ? `$${Math.round(l.price / 1000)}k` : `$${l.price}`;
+  return l.agreement_type === "rental" ? `${short}/mo` : short;
+}
+
+function priceIcon(L: typeof LeafletNS, l: Listing) {
+  const label = priceBadgeLabel(l);
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div style="background:#E2543E;color:#fff;font-weight:800;font-size:12px;padding:4px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.4);border:2px solid #fff;">${label}</div>
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #E2543E;margin-top:-1px;"></div>
+      </div>`,
+    iconSize: [52, 38],
+    iconAnchor: [26, 38],
+    popupAnchor: [0, -38],
+  });
+}
+
 // Client-only: Leaflet touches `window`, so it's dynamically imported inside
 // the effect rather than at module scope (which would break SSR).
-export function ListingsMap({ listings }: { listings: Listing[] }) {
+export function ListingsMap({ listings, focusedListingId }: { listings: Listing[]; focusedListingId: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletNS.Map | null>(null);
-  const markersRef = useRef<LeafletNS.Marker[]>([]);
+  const markersRef = useRef<Map<string, LeafletNS.Marker>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -19,15 +40,6 @@ export function ListingsMap({ listings }: { listings: Listing[] }) {
     (async () => {
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current) return;
-
-      // Next.js/webpack doesn't resolve Leaflet's default marker icon image
-      // paths correctly (they 404), so point them at the CDN copies instead.
-      delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      });
 
       if (!mapRef.current) {
         mapRef.current = L.map(containerRef.current).setView([31.9686, -99.9018], 6);
@@ -40,15 +52,14 @@ export function ListingsMap({ listings }: { listings: Listing[] }) {
       const map = mapRef.current;
 
       markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
+      markersRef.current = new Map();
 
       const pts: [number, number][] = [];
       listings.forEach((l) => {
         if (l.lat == null || l.lng == null) return;
-        const marker = L.marker([l.lat, l.lng]).addTo(map);
-        const priceStr = l.price != null ? ` &middot; $${Number(l.price).toLocaleString()}${l.agreement_type === "rental" ? "/mo" : ""}` : "";
-        marker.bindPopup(`<strong>${l.address}</strong><br/>${l.agreement_type === "rental" ? "Rental" : "Sale"}${priceStr}`);
-        markersRef.current.push(marker);
+        const marker = L.marker([l.lat, l.lng], { icon: priceIcon(L, l) }).addTo(map);
+        marker.bindPopup(`<strong>${l.address}</strong><br/>${l.agreement_type === "rental" ? "Rental" : "Sale"}`);
+        markersRef.current.set(l.id, marker);
         pts.push([l.lat, l.lng]);
       });
       if (pts.length > 0) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
@@ -59,6 +70,16 @@ export function ListingsMap({ listings }: { listings: Listing[] }) {
       ro?.disconnect();
     };
   }, [listings]);
+
+  // Pan/zoom to whichever listing was clicked in the list below.
+  useEffect(() => {
+    if (!focusedListingId) return;
+    const marker = markersRef.current.get(focusedListingId);
+    const map = mapRef.current;
+    if (!marker || !map) return;
+    map.flyTo(marker.getLatLng(), Math.max(map.getZoom(), 15), { duration: 0.6 });
+    marker.openPopup();
+  }, [focusedListingId]);
 
   useEffect(
     () => () => {
