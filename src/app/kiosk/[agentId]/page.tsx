@@ -110,18 +110,23 @@ export default function KioskPage() {
 
         {!thanks && (
           <div className="flex flex-col items-center mb-6 p-5" style={kCard}>
-            <QRPlaceholder light={KIOSK.surface} dark={KIOSK.ink} />
+            <QRPlaceholder size={130} light={KIOSK.surface} dark={KIOSK.ink} />
             <p className="text-xs mt-3 text-center" style={{ color: KIOSK.ink }}>
               Scan to save my contact card
             </p>
             <p className="text-[10px] mt-1 uppercase tracking-wide" style={{ color: COLORS.accent }}>
               Placeholder — swap in your real QR
             </p>
+            {listings.length === 1 && (
+              <p className="text-sm font-semibold text-center mt-3 pt-3 w-full" style={{ color: KIOSK.ink, borderTop: `1px solid ${KIOSK.border}` }}>
+                {listings[0].address}
+              </p>
+            )}
           </div>
         )}
 
         {!thanks && listings.length > 1 && (
-          <div className="mb-6">
+          <div className="mb-6 text-center">
             <select
               value={listingId}
               onChange={(e) => setListingId(e.target.value)}
