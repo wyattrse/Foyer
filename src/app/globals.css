@@ -25,6 +25,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+button:not(:disabled), a, [role="button"], select, summary, .press {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Foyer brand palette -- dark by default, light via [data-theme="light"] on
    <html>. Component code reads these through COLORS in lib/theme.ts, never
    these var names directly. */
@@ -40,6 +47,8 @@ body {
   --foyer-accent-bright: #E2543E;
   --foyer-warm: #D9A44E;
   --foyer-cold: #7C8894;
+  --foyer-ai: #8B7FE0;
+  --foyer-ai-bright: #A79AF0;
 }
 
 :root[data-theme="light"] {
@@ -54,4 +63,6 @@ body {
   --foyer-accent-bright: #E2543E;
   --foyer-warm: #B9832F;
   --foyer-cold: #5D6B78;
+  --foyer-ai: #6F5FD4;
+  --foyer-ai-bright: #8574E5;
 }

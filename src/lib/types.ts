@@ -30,6 +30,7 @@ export interface Listing {
   address: string;
   price: number | null;
   agreement_type: AgreementType;
+  description: string | null;
   lat: number | null;
   lng: number | null;
   created_at: string;
@@ -95,6 +96,29 @@ export interface Template {
   agent_id: string | null;
   title: string;
   body: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  agent_id: string;
+  title: string;
+  notes: string | null;
+  start_at: string;
+  end_at: string | null;
+  lead_id: string | null;
+  listing_id: string | null;
+  created_at: string;
+}
+
+export interface FileRecord {
+  id: string;
+  agent_id: string;
+  lead_id: string | null;
+  name: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
 }
 
 export interface LeadFormValues {

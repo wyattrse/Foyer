@@ -11,11 +11,13 @@ export function TasksTab({
   onAdd,
   onToggle,
   onDelete,
+  highlightedTaskId,
 }: {
   tasks: Task[];
   onAdd: (text: string) => void;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  highlightedTaskId?: string | null;
 }) {
   const [text, setText] = useState("");
   const submit = () => {
@@ -47,7 +49,7 @@ export function TasksTab({
           </p>
         )}
         {open.map((t, idx) => (
-          <div key={t.id} className="mark anim-fadeup flex items-center gap-3 p-3" style={{ ...CARD_SM, animationDelay: `${idx * 30}ms` }}>
+          <div key={t.id} className={`mark anim-fadeup flex items-center gap-3 p-3 ${t.id === highlightedTaskId ? "ai-glow" : ""}`} style={{ ...CARD_SM, animationDelay: `${idx * 30}ms` }}>
             <button onClick={() => onToggle(t.id)} className="press w-4 h-4 rounded-full flex-shrink-0" style={{ border: `2px solid ${COLORS.accent}` }} />
             <span className="flex-1 text-sm" style={{ color: COLORS.ink }}>
               {t.text}

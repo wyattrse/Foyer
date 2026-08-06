@@ -14,6 +14,8 @@ export const COLORS = {
   accentBright: "var(--foyer-accent-bright)",
   warm: "var(--foyer-warm)",
   cold: "var(--foyer-cold)",
+  ai: "var(--foyer-ai)",
+  aiBright: "var(--foyer-ai-bright)",
 };
 
 // Replaces the old `COLORS.x + "18"` hex-alpha-suffix pattern, which breaks
@@ -79,4 +81,9 @@ export const GLOBAL_STYLE = `
   .navtab { position:relative; transition: color 200ms ease; }
   .navtab::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:${COLORS.accent}; transform: scaleX(0); transition: transform 260ms cubic-bezier(.16,1,.3,1); }
   .navtab.active::after { transform: scaleX(1); }
+  @keyframes aiGlow {
+    0%, 100% { box-shadow: 0 0 0 1px ${alpha(COLORS.ai, 70)}, 0 0 12px 2px ${alpha(COLORS.aiBright, 35)}; }
+    50% { box-shadow: 0 0 0 1.5px ${COLORS.aiBright}, 0 0 22px 6px ${alpha(COLORS.aiBright, 60)}; }
+  }
+  .ai-glow { animation: aiGlow 3.2s ease-in-out infinite; }
 `;

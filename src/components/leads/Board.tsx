@@ -9,12 +9,14 @@ export function Board({
   groups,
   onSelect,
   onDropCard,
+  highlightedLeadId,
 }: {
   leads: LeadWithStatus[];
   groupField: "stage" | "source";
   groups: string[];
   onSelect: (lead: LeadWithStatus) => void;
   onDropCard: (leadId: string, groupValue: string, beforeLeadId: string | null) => void;
+  highlightedLeadId?: string | null;
 }) {
   if (leads.length === 0) {
     return (
@@ -27,13 +29,13 @@ export function Board({
     );
   }
   return (
-    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:overflow-x-auto pb-4">
+    <div className="grid grid-cols-1 sm:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] gap-3 sm:gap-4 pb-4">
       {groups.map((g, gi) => {
         const groupLeads = leads.filter((l) => l[groupField] === g).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         return (
           <div
             key={g}
-            className={`w-full sm:w-64 sm:flex-shrink-0 sm:block p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 bg-[#1D1B17] sm:bg-transparent border-[#38342A] ${groupLeads.length === 0 ? "hidden" : ""}`}
+            className={`w-full min-w-0 p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 bg-[#1D1B17] sm:bg-transparent border-[#38342A] ${groupLeads.length === 0 ? "hidden" : ""}`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
@@ -58,6 +60,7 @@ export function Board({
                   key={l.id}
                   lead={l}
                   delay={idx * 35}
+                  highlighted={l.id === highlightedLeadId}
                   onClick={() => onSelect(l)}
                   dragProps={{
                     draggable: true,

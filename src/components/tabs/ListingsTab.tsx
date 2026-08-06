@@ -17,9 +17,10 @@ interface ListingForm {
   address: string;
   price: string;
   agreementType: AgreementType;
+  description: string;
 }
 
-const EMPTY_FORM: ListingForm = { address: "", price: "", agreementType: "sale" };
+const EMPTY_FORM: ListingForm = { address: "", price: "", agreementType: "sale", description: "" };
 
 function priceLabel(agreementType: AgreementType) {
   return agreementType === "rental" ? "Monthly rent" : "Listing price";
@@ -38,13 +39,15 @@ export function ListingsTab({
   onUpdate,
   onDelete,
   onSelectLead,
+  highlightedListingId,
 }: {
   listings: Listing[];
   leads: LeadWithStatus[];
-  onAdd: (form: { address: string; price: number | null; agreementType: AgreementType }) => void;
-  onUpdate: (id: string, form: { address: string; price: number | null; agreementType: AgreementType }) => void;
+  onAdd: (form: { address: string; price: number | null; agreementType: AgreementType; description: string | null }) => void;
+  onUpdate: (id: string, form: { address: string; price: number | null; agreementType: AgreementType; description: string | null }) => void;
   onDelete: (id: string) => void;
   onSelectLead: (lead: LeadWithStatus) => void;
+  highlightedListingId?: string | null;
 }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<ListingForm>(EMPTY_FORM);
@@ -62,6 +65,7 @@ export function ListingsTab({
     address: f.address.trim(),
     price: f.price === "" ? null : Number(f.price),
     agreementType: f.agreementType,
+    description: f.description.trim() === "" ? null : f.description.trim(),
   });
 
   const submitNew = () => {
@@ -72,7 +76,12 @@ export function ListingsTab({
   };
   const startEdit = (l: Listing) => {
     setEditingId(l.id);
-    setEditForm({ address: l.address, price: l.price != null ? String(l.price) : "", agreementType: l.agreement_type });
+    setEditForm({
+      address: l.address,
+      price: l.price != null ? String(l.price) : "",
+      agreementType: l.agreement_type,
+      description: l.description ?? "",
+    });
   };
   const saveEdit = (id: string) => {
     if (!editForm.address.trim()) return;
@@ -81,7 +90,7 @@ export function ListingsTab({
   };
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-5xl">
       <ListingsMap listings={filteredListings} focusedListingId={focusedListingId} />
 
       <div className="flex gap-1.5 mb-4">
@@ -106,7 +115,7 @@ export function ListingsTab({
         {filteredListings.map((l, idx) => {
           const associatedLeads = leads.filter((lead) => lead.listing_id === l.id);
           return (
-            <div key={l.id} className="mark anim-fadeup p-4" style={{ ...CARD_SM, animationDelay: `${idx * 40}ms` }}>
+            <div key={l.id} className={`mark anim-fadeup p-4 ${l.id === highlightedListingId ? "ai-glow" : ""}`} style={{ ...CARD_SM, animationDelay: `${idx * 40}ms` }}>
               {editingId === l.id ? (
                 <div className="space-y-2">
                   <input
@@ -134,6 +143,17 @@ export function ListingsTab({
                       <option value="sale">Sale</option>
                       <option value="rental">Rental</option>
                     </select>
+                  </div>
+                  <div>
+                    <FieldLabel>Description</FieldLabel>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                      placeholder="Notes about the property — layout, condition, what to mention to buyers..."
+                      rows={3}
+                      className="w-full px-3 py-2 text-sm outline-none resize-none"
+                      style={inputStyle}
+                    />
                   </div>
                   <div className="flex gap-2">
                     <PrimaryButton onClick={() => saveEdit(l.id)} className="px-3 py-1.5 text-xs">
@@ -172,6 +192,11 @@ export function ListingsTab({
                       </button>
                     </div>
                   </div>
+                  {l.description && (
+                    <p className="text-xs mt-1.5 line-clamp-2" style={{ color: COLORS.inkSoft }}>
+                      {l.description}
+                    </p>
+                  )}
                   <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
                     <p className="text-xs uppercase tracking-wide mb-1" style={{ color: COLORS.inkSoft, fontSize: 10.5 }}>
                       {associatedLeads.length} lead{associatedLeads.length === 1 ? "" : "s"}
@@ -243,6 +268,17 @@ export function ListingsTab({
                 <option value="rental">Rental</option>
               </select>
             </div>
+          </div>
+          <div>
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Notes about the property — layout, condition, what to mention to buyers..."
+              rows={3}
+              className="w-full px-3 py-2 text-sm outline-none resize-none"
+              style={inputStyle}
+            />
           </div>
           <div className="flex gap-2">
             <PrimaryButton onClick={submitNew} className="px-3 py-1.5 text-xs">

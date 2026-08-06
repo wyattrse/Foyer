@@ -9,7 +9,7 @@ import {
   QrCode,
   ListTodo,
   Settings as SettingsIcon,
-  MessageSquareText,
+  FolderOpen,
   DollarSign,
   BellRing,
   BarChart3,
@@ -27,29 +27,35 @@ import { Board } from "@/components/leads/Board";
 import { FollowUps } from "@/components/leads/FollowUps";
 import { Overview } from "@/components/leads/Overview";
 import { TasksTab } from "@/components/tabs/TasksTab";
-import { TemplatesTab } from "@/components/tabs/TemplatesTab";
+import { FilesTab } from "@/components/tabs/FilesTab";
 import { CommissionTab } from "@/components/tabs/CommissionTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { ListingsTab } from "@/components/tabs/ListingsTab";
+import { DashboardStats } from "@/components/leads/DashboardStats";
+import { CalendarTab } from "@/components/calendar/CalendarTab";
 import { MobileNav } from "@/components/app/MobileNav";
+import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { CARD, COLORS, alpha, inputStyle } from "@/lib/theme";
 import { STAGES, SOURCES } from "@/lib/constants";
 import { findDuplicateLead, matchesSearch } from "@/lib/scoring";
 import { reorderAndMove } from "@/lib/reorder";
+import { canConvertToPdf, convertBlobToPdf, pdfNameFor } from "@/lib/pdfConvert";
 import * as leadsApi from "@/lib/data/leads";
 import * as interactionsApi from "@/lib/data/interactions";
 import * as tasksApi from "@/lib/data/tasks";
 import * as templatesApi from "@/lib/data/templates";
 import * as agentApi from "@/lib/data/agent";
 import * as listingsApi from "@/lib/data/listings";
-import type { Agent, AgreementType, Interaction, LeadFormValues, LeadWithStatus, Listing, Task, Template } from "@/lib/types";
+import * as calendarApi from "@/lib/data/calendar";
+import * as filesApi from "@/lib/data/files";
+import type { Agent, AgreementType, CalendarEvent, FileRecord, Interaction, LeadFormValues, LeadWithStatus, Listing, Task, Template } from "@/lib/types";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { key: "add", label: "Quick Add", icon: UserPlus },
   { key: "listings", label: "Listings", icon: Building2 },
   { key: "tasks", label: "Tasks", icon: ListTodo },
-  { key: "templates", label: "Templates", icon: MessageSquareText },
+  { key: "files", label: "Files", icon: FolderOpen },
   { key: "commission", label: "Commission", icon: DollarSign },
   { key: "settings", label: "Settings", icon: SettingsIcon },
 ] as const;
@@ -76,7 +82,13 @@ export function DashboardApp({ userId }: { userId: string }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [files, setFiles] = useState<FileRecord[]>([]);
   const [agent, setAgent] = useState<Agent | null>(null);
+  // Set while the AI assistant is executing an approved action, so the
+  // affected card can glow in place -- cleared a moment after so the user
+  // actually catches it even on a fast round trip.
+  const [aiActiveTarget, setAiActiveTarget] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<string>("dashboard");
   const [subtab, setSubtab] = useState<string>("pipeline");
@@ -162,6 +174,19 @@ export function DashboardApp({ userId }: { userId: string }) {
       } finally {
         setLoading(false);
       }
+      // Calendar and Files depend on migrations 0008/0009 -- fetched
+      // separately so a not-yet-run migration doesn't block the rest of
+      // the dashboard from loading.
+      try {
+        setCalendarEvents(await calendarApi.fetchEvents(supabase));
+      } catch {
+        // Table may not exist yet; Calendar tab will just show empty.
+      }
+      try {
+        setFiles(await filesApi.fetchFiles(supabase));
+      } catch {
+        // Table may not exist yet; Files tab will just show empty.
+      }
     })();
   }, [supabase, userId]);
 
@@ -181,6 +206,17 @@ export function DashboardApp({ userId }: { userId: string }) {
     } catch {
       setError("Couldn't save — your changes may not persist.");
       return false;
+    }
+  };
+
+  const addLeadForAssistant = async (form: LeadFormValues) => {
+    try {
+      const lead = await leadsApi.insertLead(supabase, userId, form);
+      await refreshLeads();
+      return lead;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
     }
   };
 
@@ -206,6 +242,32 @@ export function DashboardApp({ userId }: { userId: string }) {
       setSelectedInteractions(freshInteractions);
     } catch {
       setError("Couldn't save — your changes may not persist.");
+    }
+  };
+
+  const deleteLeadForAssistant = async (id: string) => {
+    try {
+      await leadsApi.softDeleteLead(supabase, id);
+      if (selectedId === id) setSelectedId(null);
+      await refreshLeads();
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      return false;
+    }
+  };
+
+  const logInteractionForAssistant = async (leadId: string, text: string) => {
+    try {
+      await interactionsApi.logInteraction(supabase, leadId, text);
+      await refreshLeads(); // next_touch_due depends on the latest interaction
+      if (selectedId === leadId) {
+        setSelectedInteractions(await interactionsApi.fetchInteractions(supabase, leadId));
+      }
+      return true;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return false;
     }
   };
 
@@ -269,6 +331,37 @@ export function DashboardApp({ userId }: { userId: string }) {
     }
   };
 
+  const addTaskForAssistant = async (text: string) => {
+    try {
+      const t = await tasksApi.insertTask(supabase, userId, text);
+      setTasks((prev) => [t, ...prev]);
+      return t;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const completeTaskForAssistant = async (id: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: true } : t)));
+    try {
+      await tasksApi.setTaskDone(supabase, id, true);
+      return true;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return false;
+    }
+  };
+  const deleteTaskForAssistant = async (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await tasksApi.deleteTask(supabase, id);
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      return false;
+    }
+  };
+
   const addTemplate = async (form: { title: string; body: string }) => {
     try {
       const t = await templatesApi.insertTemplate(supabase, userId, form);
@@ -294,20 +387,236 @@ export function DashboardApp({ userId }: { userId: string }) {
     }
   };
 
-  const addListing = async (form: { address: string; price: number | null; agreementType: AgreementType }) => {
+  const addTemplateForAssistant = async (form: { title: string; body: string }) => {
     try {
-      const l = await listingsApi.insertListing(supabase, userId, form);
-      setListings((prev) => [l, ...prev]);
+      const t = await templatesApi.insertTemplate(supabase, userId, form);
+      setTemplates((prev) => [...prev, t]);
+      return t;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const updateTemplateForAssistant = async (id: string, form: { title?: string; body?: string }) => {
+    const existing = templates.find((t) => t.id === id);
+    if (!existing) return null;
+    const merged = { title: form.title ?? existing.title, body: form.body ?? existing.body };
+    const updated: Template = { ...existing, ...merged };
+    setTemplates((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    try {
+      await templatesApi.updateTemplate(supabase, id, merged);
+      return updated;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const deleteTemplateForAssistant = async (id: string) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await templatesApi.deleteTemplate(supabase, id);
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      return false;
+    }
+  };
+
+  // -------- Calendar --------
+  const refreshEvents = async () => {
+    try {
+      setCalendarEvents(await calendarApi.fetchEvents(supabase));
+    } catch {
+      setError("Couldn't load calendar events.");
+    }
+  };
+  const addEvent = async (form: Parameters<typeof calendarApi.insertEvent>[2]) => {
+    try {
+      const ev = await calendarApi.insertEvent(supabase, userId, form);
+      setCalendarEvents((prev) => [...prev, ev].sort((a, b) => a.start_at.localeCompare(b.start_at)));
+      return ev;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const updateEventHandler = async (id: string, form: Parameters<typeof calendarApi.updateEvent>[2]) => {
+    try {
+      const ev = await calendarApi.updateEvent(supabase, id, form);
+      setCalendarEvents((prev) => prev.map((e) => (e.id === id ? ev : e)).sort((a, b) => a.start_at.localeCompare(b.start_at)));
+      return ev;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const deleteEventHandler = async (id: string) => {
+    setCalendarEvents((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await calendarApi.deleteEvent(supabase, id);
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      await refreshEvents();
+      return false;
+    }
+  };
+
+  // -------- Files --------
+  const uploadFileHandler = async (file: File, leadId: string | null) => {
+    try {
+      const f = await filesApi.uploadFile(supabase, userId, file, leadId);
+      setFiles((prev) => [f, ...prev]);
+    } catch {
+      setError("Couldn't upload — try again.");
+    }
+  };
+  const downloadFileHandler = async (file: FileRecord) => {
+    try {
+      const blob = await filesApi.downloadFile(supabase, file.storage_path);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Couldn't download — try again.");
+    }
+  };
+  const deleteFileHandler = async (id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (!file) return;
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    try {
+      await filesApi.deleteFile(supabase, id, file.storage_path);
+    } catch {
+      setError("Couldn't delete — try again.");
+    }
+  };
+  const attachFileToLeadHandler = async (id: string, leadId: string | null) => {
+    try {
+      const updated = await filesApi.attachFileToLead(supabase, id, leadId);
+      setFiles((prev) => prev.map((f) => (f.id === id ? updated : f)));
     } catch {
       setError("Couldn't save — your changes may not persist.");
     }
   };
-  const updateListingHandler = async (id: string, form: { address: string; price: number | null; agreementType: AgreementType }) => {
+  const convertFileToPdfHandler = async (file: FileRecord) => {
+    if (!canConvertToPdf(file.mime_type, file.name)) {
+      setError("That file type can't be converted to PDF yet — only images and plain text are supported.");
+      return;
+    }
+    try {
+      const blob = await filesApi.downloadFile(supabase, file.storage_path);
+      const pdfBlob = await convertBlobToPdf(blob, file.mime_type);
+      const pdfName = pdfNameFor(file.name);
+      const saved = await filesApi.uploadBlobAsFile(supabase, userId, pdfBlob, pdfName, "application/pdf", file.lead_id);
+      setFiles((prev) => [saved, ...prev]);
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = pdfName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Couldn't convert that file — try again.");
+    }
+  };
+
+  // -------- AI assistant wrappers (return values for confirmation UI) --------
+  const addEventForAssistant = async (form: { title: string; notes: string | null; startAt: string; endAt: string | null; leadId: string | null; listingId: string | null }) =>
+    addEvent(form);
+  const updateEventForAssistant = async (
+    id: string,
+    form: Partial<{ title: string; notes: string | null; startAt: string; endAt: string | null; leadId: string | null; listingId: string | null }>,
+  ) => updateEventHandler(id, form);
+  const deleteEventForAssistant = async (id: string) => deleteEventHandler(id);
+  const renameFileForAssistant = async (id: string, name: string) => {
+    try {
+      const updated = await filesApi.renameFile(supabase, id, name);
+      setFiles((prev) => prev.map((f) => (f.id === id ? updated : f)));
+      return updated;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const attachFileForAssistant = async (id: string, leadId: string | null) => {
+    try {
+      const updated = await filesApi.attachFileToLead(supabase, id, leadId);
+      setFiles((prev) => prev.map((f) => (f.id === id ? updated : f)));
+      return updated;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const deleteFileForAssistant = async (id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (!file) return false;
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    try {
+      await filesApi.deleteFile(supabase, id, file.storage_path);
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      return false;
+    }
+  };
+  const convertFileForAssistant = async (id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (!file) return false;
+    if (!canConvertToPdf(file.mime_type, file.name)) return false;
+    try {
+      await convertFileToPdfHandler(file);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const addListing = async (form: { address: string; price: number | null; agreementType: AgreementType; description?: string | null }) => {
+    try {
+      const l = await listingsApi.insertListing(supabase, userId, form);
+      setListings((prev) => [l, ...prev]);
+      return l;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const updateListingHandler = async (
+    id: string,
+    form: { address: string; price: number | null; agreementType: AgreementType; description?: string | null },
+  ) => {
     try {
       const updated = await listingsApi.updateListing(supabase, id, form);
       setListings((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      return updated;
     } catch {
       setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const patchListingHandler = async (id: string, patch: Parameters<typeof listingsApi.patchListing>[2]) => {
+    try {
+      const updated = await listingsApi.patchListing(supabase, id, patch);
+      setListings((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      return updated;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
+    }
+  };
+  const updateLeadById = async (id: string, patch: Record<string, unknown>) => {
+    try {
+      const updated = await leadsApi.updateLead(supabase, id, patch);
+      await refreshLeads();
+      return updated;
+    } catch {
+      setError("Couldn't save — your changes may not persist.");
+      return null;
     }
   };
   const deleteListingHandler = async (id: string) => {
@@ -317,6 +626,17 @@ export function DashboardApp({ userId }: { userId: string }) {
     } catch {
       setError("Couldn't delete — try again.");
       await refreshListings();
+    }
+  };
+  const deleteListingForAssistant = async (id: string) => {
+    setListings((prev) => prev.filter((l) => l.id !== id));
+    try {
+      await listingsApi.deleteListing(supabase, id);
+      return true;
+    } catch {
+      setError("Couldn't delete — try again.");
+      await refreshListings();
+      return false;
     }
   };
   const refreshListings = async () => {
@@ -415,7 +735,7 @@ export function DashboardApp({ userId }: { userId: string }) {
       </div>
 
       <div className="p-3 sm:p-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-[1800px] mx-auto">
           {error && (
             <div className="mb-4 text-xs px-3 py-2" style={{ background: alpha(COLORS.accentBright, 9), color: COLORS.accentBright, borderRadius: 5 }}>
               {error}
@@ -461,6 +781,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                     onUpdate={updateListingHandler}
                     onDelete={deleteListingHandler}
                     onSelectLead={(l) => setSelectedId(l.id)}
+                    highlightedListingId={aiActiveTarget}
                   />
                 </>
               ) : view === "tasks" ? (
@@ -468,14 +789,41 @@ export function DashboardApp({ userId }: { userId: string }) {
                   <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Tasks
                   </h1>
-                  <TasksTab tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} />
+                  <TasksTab tasks={tasks} onAdd={addTask} onToggle={toggleTask} onDelete={deleteTask} highlightedTaskId={aiActiveTarget} />
+                  <div className="mt-8 pt-6" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+                    <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: COLORS.inkSoft }}>
+                      Calendar
+                    </p>
+                    <CalendarTab
+                      events={calendarEvents}
+                      leads={leads}
+                      listings={listings}
+                      highlightedEventId={aiActiveTarget}
+                      onAdd={addEvent}
+                      onUpdate={updateEventHandler}
+                      onDelete={deleteEventHandler}
+                    />
+                  </div>
                 </>
-              ) : view === "templates" ? (
+              ) : view === "files" ? (
                 <>
                   <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
-                    Templates
+                    Files
                   </h1>
-                  <TemplatesTab templates={templates} onAdd={addTemplate} onUpdate={updateTemplate} onDelete={deleteTemplate} />
+                  <FilesTab
+                    files={files}
+                    leads={leads}
+                    templates={templates}
+                    highlightedFileId={aiActiveTarget}
+                    onUpload={uploadFileHandler}
+                    onDownload={downloadFileHandler}
+                    onDelete={deleteFileHandler}
+                    onAttachToLead={attachFileToLeadHandler}
+                    onConvertToPdf={convertFileToPdfHandler}
+                    onAddTemplate={addTemplate}
+                    onUpdateTemplate={updateTemplate}
+                    onDeleteTemplate={deleteTemplate}
+                  />
                 </>
               ) : view === "commission" ? (
                 <>
@@ -545,8 +893,15 @@ export function DashboardApp({ userId }: { userId: string }) {
                     </div>
                   )}
 
-                  {subtab === "pipeline" && <Board leads={filteredLeads} groupField="stage" groups={STAGES} onSelect={(l) => setSelectedId(l.id)} onDropCard={handleDropCard} />}
-                  {subtab === "byType" && <Board leads={filteredLeads} groupField="source" groups={SOURCES} onSelect={(l) => setSelectedId(l.id)} onDropCard={handleDropCard} />}
+                  {subtab === "pipeline" && (
+                    <>
+                      <DashboardStats leads={leads} listings={listings} tasks={tasks} />
+                      <Board leads={filteredLeads} groupField="stage" groups={STAGES} onSelect={(l) => setSelectedId(l.id)} onDropCard={handleDropCard} highlightedLeadId={aiActiveTarget} />
+                    </>
+                  )}
+                  {subtab === "byType" && (
+                    <Board leads={filteredLeads} groupField="source" groups={SOURCES} onSelect={(l) => setSelectedId(l.id)} onDropCard={handleDropCard} highlightedLeadId={aiActiveTarget} />
+                  )}
                   {subtab === "followups" && <FollowUps leads={filteredLeads} onSelect={(l) => setSelectedId(l.id)} />}
                   {subtab === "overview" && <Overview leads={leads} />}
                 </>
@@ -568,6 +923,38 @@ export function DashboardApp({ userId }: { userId: string }) {
         />
       )}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      {!loading && (
+        <AssistantPanel
+          agentName={agent?.name ?? ""}
+          leads={leads}
+          listings={listings}
+          tasks={tasks}
+          templates={templates}
+          events={calendarEvents}
+          files={files}
+          onCreateLead={addLeadForAssistant}
+          onUpdateLead={updateLeadById}
+          onDeleteLead={deleteLeadForAssistant}
+          onLogInteraction={logInteractionForAssistant}
+          onCreateListing={addListing}
+          onUpdateListing={patchListingHandler}
+          onDeleteListing={deleteListingForAssistant}
+          onCreateTask={addTaskForAssistant}
+          onCompleteTask={completeTaskForAssistant}
+          onDeleteTask={deleteTaskForAssistant}
+          onCreateTemplate={addTemplateForAssistant}
+          onUpdateTemplate={updateTemplateForAssistant}
+          onDeleteTemplate={deleteTemplateForAssistant}
+          onCreateEvent={addEventForAssistant}
+          onUpdateEvent={updateEventForAssistant}
+          onDeleteEvent={deleteEventForAssistant}
+          onAttachFileToLead={attachFileForAssistant}
+          onRenameFile={renameFileForAssistant}
+          onDeleteFile={deleteFileForAssistant}
+          onConvertFileToPdf={convertFileForAssistant}
+          onActionTarget={setAiActiveTarget}
+        />
+      )}
     </div>
   );
 }
