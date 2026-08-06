@@ -7,6 +7,12 @@ import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
 import { NAV_DESTINATIONS, type NavKey } from "@/components/app/BottomNav";
 import type { Agent } from "@/lib/types";
 
+const UI_SCALES = [
+  { key: "small", label: "Small" },
+  { key: "medium", label: "Medium" },
+  { key: "large", label: "Large" },
+] as const;
+
 // `agent` is always loaded by the time this mounts (DashboardApp gates on it),
 // and never switches to a *different* agent mid-session, so plain initial
 // state is enough -- no need to re-sync via an effect.
@@ -16,6 +22,8 @@ export function SettingsTab({
   onSignOut,
   themeMode,
   onThemeChange,
+  uiScale,
+  onUiScaleChange,
   bottomNavSlots,
   onBottomNavSlotsChange,
 }: {
@@ -24,6 +32,8 @@ export function SettingsTab({
   onSignOut: () => void;
   themeMode: "dark" | "light";
   onThemeChange: (mode: "dark" | "light") => void;
+  uiScale: "small" | "medium" | "large";
+  onUiScaleChange: (scale: "small" | "medium" | "large") => void;
   bottomNavSlots: [NavKey, NavKey, NavKey];
   onBottomNavSlotsChange: (slots: [NavKey, NavKey, NavKey]) => void;
 }) {
@@ -94,6 +104,30 @@ export function SettingsTab({
           >
             <Sun size={13} /> Light
           </button>
+        </div>
+      </div>
+
+      <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <FieldLabel>Text &amp; spacing size</FieldLabel>
+        <p className="text-xs mb-3" style={{ color: COLORS.inkSoft }}>
+          Scales text, padding, and tap targets together across the whole app — on your phone and here.
+        </p>
+        <div className="flex gap-2">
+          {UI_SCALES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => onUiScaleChange(s.key)}
+              className="press flex-1 px-3 py-2 text-xs font-medium uppercase tracking-wide"
+              style={{
+                color: uiScale === s.key ? "#FBF3EF" : COLORS.inkSoft,
+                background: uiScale === s.key ? COLORS.accent : COLORS.surface2,
+                border: `1px solid ${uiScale === s.key ? COLORS.accent : COLORS.border}`,
+                borderRadius: 5,
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
       </div>
 

@@ -78,7 +78,14 @@ export default function KioskPage() {
   return (
     <div className="anim-fadein" style={{ background: KIOSK.bg, minHeight: "100vh", fontFamily: "'Space Grotesk', sans-serif" }}>
       <GlobalStyle />
-      <div className="flex items-center justify-between px-6 py-4" style={{ background: KIOSK.surface, borderBottom: `1px solid ${KIOSK.border}` }}>
+      <div
+        className="flex items-center justify-between px-6 pb-4"
+        style={{
+          background: KIOSK.surface,
+          borderBottom: `1px solid ${KIOSK.border}`,
+          paddingTop: "max(16px, env(safe-area-inset-top))",
+        }}
+      >
         <BrandMark size="sm" ink={KIOSK.ink} arc={KIOSK.border} />
         <Link
           href="/dashboard"

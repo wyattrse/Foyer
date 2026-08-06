@@ -44,7 +44,9 @@ export function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <label
       className="block text-xs font-medium mb-1 uppercase tracking-wide"
-      style={{ color: COLORS.inkSoft, fontSize: 10.5 }}
+      // rem, not px -- so this scales with the Settings > Text & spacing size
+      // control along with everything else, instead of staying pinned.
+      style={{ color: COLORS.inkSoft, fontSize: "0.65625rem" }}
     >
       {children}
     </label>

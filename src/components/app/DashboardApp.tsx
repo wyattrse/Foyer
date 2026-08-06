@@ -102,6 +102,7 @@ export function DashboardApp({ userId }: { userId: string }) {
   const { toasts, pushToast, dismissToast } = useToasts();
   const [scrolled, setScrolled] = useState(false);
   const [themeMode, setThemeModeState] = useState<"dark" | "light">("dark");
+  const [uiScale, setUiScaleState] = useState<"small" | "medium" | "large">("medium");
   const [bottomNavSlots, setBottomNavSlotsState] = useState<[NavKey, NavKey, NavKey]>(["dashboard", "listings", "tasks"]);
   const [assistantOpen, setAssistantOpen] = useState(false);
   // Bumped to signal "open the add form" to a tab that isn't mounted from a
@@ -126,6 +127,23 @@ export function DashboardApp({ userId }: { userId: string }) {
       setThemeModeState("light");
     }
   }, []);
+
+  // Same restore-only pattern as theme above.
+  useEffect(() => {
+    const stored = localStorage.getItem("foyer-ui-scale");
+    if (stored === "small" || stored === "large") {
+      document.documentElement.setAttribute("data-ui-scale", stored);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage on mount, not derivable from props/state
+      setUiScaleState(stored);
+    }
+  }, []);
+
+  const setUiScale = (scale: "small" | "medium" | "large") => {
+    setUiScaleState(scale);
+    if (scale === "medium") document.documentElement.removeAttribute("data-ui-scale");
+    else document.documentElement.setAttribute("data-ui-scale", scale);
+    localStorage.setItem("foyer-ui-scale", scale);
+  };
 
   // Same restore-only pattern as theme above.
   useEffect(() => {
@@ -891,6 +909,8 @@ export function DashboardApp({ userId }: { userId: string }) {
                     onSignOut={signOut}
                     themeMode={themeMode}
                     onThemeChange={setThemeMode}
+                    uiScale={uiScale}
+                    onUiScaleChange={setUiScale}
                     bottomNavSlots={bottomNavSlots}
                     onBottomNavSlotsChange={setBottomNavSlots}
                   />

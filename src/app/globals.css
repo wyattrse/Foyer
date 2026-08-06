@@ -61,6 +61,18 @@ button:disabled {
   --foyer-ai-bright: #A79AF0;
 }
 
+/* UI scale -- Tailwind's text and spacing scales are both rem-based, so
+   resizing the root font-size scales type, padding, and gaps together
+   everywhere at once (icon glyphs and hardcoded border-radius stay put,
+   which reads as normal -- the same tradeoff iOS/Android text-size
+   settings make). Default (no attribute) is 100%, i.e. medium. */
+:root[data-ui-scale="small"] {
+  font-size: 93.75%;
+}
+:root[data-ui-scale="large"] {
+  font-size: 112.5%;
+}
+
 :root[data-theme="light"] {
   --foyer-bg: #F2EEE4;
   --foyer-surface: #FFFFFF;
