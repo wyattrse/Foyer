@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, MapPin } from "lucide-react";
 import { CARD_SM, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, Pill, FieldLabel } from "@/components/ui/Basics";
@@ -40,6 +40,7 @@ export function ListingsTab({
   onDelete,
   onSelectLead,
   highlightedListingId,
+  openTrigger,
 }: {
   listings: Listing[];
   leads: LeadWithStatus[];
@@ -48,8 +49,19 @@ export function ListingsTab({
   onDelete: (id: string) => void;
   onSelectLead: (lead: LeadWithStatus) => void;
   highlightedListingId?: string | null;
+  // Truthy for one render right after the mobile "Add" sheet requests this
+  // tab -- the parent clears it back to 0 immediately after, so a plain
+  // navigation back to this tab later (openTrigger already 0) never
+  // re-triggers it. A last-seen-ref comparison doesn't work here because
+  // this tab isn't mounted until the view switches to it, so there's no
+  // "previous" render to diff against on the very first one.
+  openTrigger?: number;
 }) {
   const [adding, setAdding] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot external trigger from the parent, not state derivable from props
+    if (openTrigger) setAdding(true);
+  }, [openTrigger]);
   const [form, setForm] = useState<ListingForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ListingForm>(EMPTY_FORM);

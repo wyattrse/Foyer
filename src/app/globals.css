@@ -32,6 +32,16 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Hide native scrollbars everywhere -- content stays scrollable, the
+   chrome just doesn't look like a browser tacked on top of an app. */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* Foyer brand palette -- dark by default, light via [data-theme="light"] on
    <html>. Component code reads these through COLORS in lib/theme.ts, never
    these var names directly. */

@@ -255,6 +255,9 @@ export function AssistantPanel({
   onDeleteFile,
   onConvertFileToPdf,
   onActionTarget,
+  open,
+  onOpenChange,
+  dockedInNav,
 }: {
   agentName: string;
   leads: LeadWithStatus[];
@@ -284,8 +287,14 @@ export function AssistantPanel({
   onDeleteFile: (id: string) => Promise<boolean>;
   onConvertFileToPdf: (id: string) => Promise<boolean>;
   onActionTarget?: (id: string | null) => void;
+  // Fully controlled so the bottom nav's "Foyer AI" tab (when pinned) can
+  // open the same panel instance from outside this component.
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  // When true, "Foyer AI" is one of the pinned bottom-nav tabs, so the
+  // mobile-only floating trigger (circle or pull-tab) is redundant.
+  dockedInNav: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -536,10 +545,11 @@ export function AssistantPanel({
 
   return (
     <>
+      {/* Desktop trigger: unchanged circular FAB, always present. */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         aria-label={open ? "Close Foyer AI" : "Open Foyer AI"}
-        className={`press fixed bottom-24 right-5 z-40 w-12 h-12 rounded-full flex items-center justify-center ${sending ? "ai-glow" : ""}`}
+        className={`press hidden sm:flex fixed bottom-24 right-5 z-40 w-12 h-12 rounded-full items-center justify-center ${sending ? "ai-glow" : ""}`}
         style={{
           background: `linear-gradient(135deg, ${COLORS.ai}, ${COLORS.aiBright})`,
           boxShadow: `0 8px 24px ${alpha(COLORS.ai, 45)}`,
@@ -548,29 +558,48 @@ export function AssistantPanel({
         {open ? <X size={20} color="#fff" /> : <Sparkles size={20} color="#fff" />}
       </button>
 
+      {/* Mobile trigger: only when Foyer AI isn't pinned to the bottom nav.
+          A rectangular tab peeking off the right edge, not a circle -- the
+          circle is reserved for the nav bar's own icon language. */}
+      {!dockedInNav && (
+        <button
+          onClick={() => onOpenChange(true)}
+          aria-label="Open Foyer AI"
+          className={`sm:hidden fixed right-0 top-1/2 z-40 flex items-center justify-center ${sending ? "ai-glow" : ""}`}
+          style={{
+            width: 38,
+            height: 72,
+            transform: "translateY(-50%)",
+            borderRadius: "16px 0 0 16px",
+            background: `linear-gradient(165deg, ${COLORS.ai}, ${COLORS.aiBright})`,
+            boxShadow: `0 8px 20px ${alpha(COLORS.ai, 45)}`,
+          }}
+        >
+          <Sparkles size={17} color="#fff" />
+        </button>
+      )}
+
       {open && (
         <div
-          className={`anim-popin fixed bottom-40 right-5 z-40 flex flex-col ${sending ? "ai-glow" : ""}`}
+          className={`anim-popin fixed z-50 flex flex-col inset-0 sm:inset-auto sm:bottom-40 sm:right-5 sm:w-[360px] sm:max-w-[88vw] sm:h-[520px] sm:max-h-[70vh] rounded-none sm:rounded-xl ${sending ? "ai-glow" : ""}`}
           style={{
-            width: 360,
-            maxWidth: "88vw",
-            height: 520,
-            maxHeight: "70vh",
             background: COLORS.surface,
             border: `1px solid ${COLORS.border}`,
-            borderRadius: 12,
             boxShadow: "0 20px 48px rgba(0,0,0,0.4)",
             overflow: "hidden",
           }}
         >
           <div
             className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-            style={{ borderBottom: `1px solid ${COLORS.border}`, background: alpha(COLORS.ai, 10) }}
+            style={{ borderBottom: `1px solid ${COLORS.border}`, background: alpha(COLORS.ai, 10), paddingTop: "max(12px, env(safe-area-inset-top))" }}
           >
             <Sparkles size={15} style={{ color: COLORS.aiBright }} />
-            <p className="text-sm font-semibold" style={{ color: COLORS.ink }}>
+            <p className="flex-1 text-sm font-semibold" style={{ color: COLORS.ink }}>
               Foyer AI
             </p>
+            <button onClick={() => onOpenChange(false)} aria-label="Close Foyer AI" className="sm:hidden press w-8 h-8 rounded-full flex items-center justify-center" style={{ color: COLORS.inkSoft }}>
+              <X size={18} />
+            </button>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
@@ -674,7 +703,10 @@ export function AssistantPanel({
             )}
           </div>
 
-          <div className="flex items-center gap-2 p-2.5 flex-shrink-0" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          <div
+            className="flex items-center gap-2 p-2.5 flex-shrink-0"
+            style={{ borderTop: `1px solid ${COLORS.border}`, paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+          >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}

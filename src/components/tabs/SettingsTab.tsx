@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { CARD, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
+import { NAV_DESTINATIONS, type NavKey } from "@/components/app/BottomNav";
 import type { Agent } from "@/lib/types";
 
 // `agent` is always loaded by the time this mounts (DashboardApp gates on it),
@@ -15,12 +16,16 @@ export function SettingsTab({
   onSignOut,
   themeMode,
   onThemeChange,
+  bottomNavSlots,
+  onBottomNavSlotsChange,
 }: {
   agent: Agent;
   onSave: (patch: { name: string; brokerage: string; commission_split: number }) => void;
   onSignOut: () => void;
   themeMode: "dark" | "light";
   onThemeChange: (mode: "dark" | "light") => void;
+  bottomNavSlots: [NavKey, NavKey, NavKey];
+  onBottomNavSlotsChange: (slots: [NavKey, NavKey, NavKey]) => void;
 }) {
   const [form, setForm] = useState({
     name: agent.name,
@@ -89,6 +94,34 @@ export function SettingsTab({
           >
             <Sun size={13} /> Light
           </button>
+        </div>
+      </div>
+
+      <div className="mt-6 pt-4 sm:hidden" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <FieldLabel>Bottom navigation</FieldLabel>
+        <p className="text-xs mb-3" style={{ color: COLORS.inkSoft }}>
+          Choose the 3 tabs that sit next to Add on your phone. Anything else is one tap away under More.
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {([0, 1, 2] as const).map((i) => (
+            <select
+              key={i}
+              value={bottomNavSlots[i]}
+              onChange={(e) => {
+                const next = [...bottomNavSlots] as [NavKey, NavKey, NavKey];
+                next[i] = e.target.value as NavKey;
+                onBottomNavSlotsChange(next);
+              }}
+              className="w-full px-2 py-2.5 text-xs outline-none"
+              style={inputStyle}
+            >
+              {NAV_DESTINATIONS.map((d) => (
+                <option key={d.key} value={d.key} disabled={bottomNavSlots.some((slot, j) => j !== i && slot === d.key)}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          ))}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from "lucide-react";
 import { CARD, CARD_SM, COLORS, alpha, inputStyle } from "@/lib/theme";
 import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
@@ -39,6 +39,7 @@ export function CalendarTab({
   onAdd,
   onUpdate,
   onDelete,
+  openTrigger,
 }: {
   events: CalendarEvent[];
   leads: LeadWithStatus[];
@@ -47,9 +48,17 @@ export function CalendarTab({
   onAdd: (form: { title: string; notes: string | null; startAt: string; endAt: string | null; leadId: string | null; listingId: string | null }) => void;
   onUpdate: (id: string, form: { title: string; notes: string | null; startAt: string; endAt: string | null; leadId: string | null; listingId: string | null }) => void;
   onDelete: (id: string) => void;
+  // Truthy for one render right after the mobile "Add" sheet requests this
+  // tab -- the parent clears it back to 0 immediately after. See the same
+  // comment in ListingsTab for why a last-seen-ref diff doesn't work here.
+  openTrigger?: number;
 }) {
   const [cursor, setCursor] = useState(() => new Date());
   const [editing, setEditing] = useState<{ id: string | null; form: EventForm } | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot external trigger from the parent, not state derivable from props
+    if (openTrigger) setEditing({ id: null, form: emptyForm(toLocalDateInput(new Date())) });
+  }, [openTrigger]);
 
   const monthLabel = cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 

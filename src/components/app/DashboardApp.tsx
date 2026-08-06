@@ -33,7 +33,7 @@ import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { ListingsTab } from "@/components/tabs/ListingsTab";
 import { DashboardStats } from "@/components/leads/DashboardStats";
 import { CalendarTab } from "@/components/calendar/CalendarTab";
-import { MobileNav } from "@/components/app/MobileNav";
+import { BottomNav, type NavKey, type QuickAction } from "@/components/app/BottomNav";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { CARD, COLORS, alpha, inputStyle } from "@/lib/theme";
 import { STAGES, SOURCES } from "@/lib/constants";
@@ -102,6 +102,12 @@ export function DashboardApp({ userId }: { userId: string }) {
   const { toasts, pushToast, dismissToast } = useToasts();
   const [scrolled, setScrolled] = useState(false);
   const [themeMode, setThemeModeState] = useState<"dark" | "light">("dark");
+  const [bottomNavSlots, setBottomNavSlotsState] = useState<[NavKey, NavKey, NavKey]>(["dashboard", "listings", "tasks"]);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  // Bumped to signal "open the add form" to a tab that isn't mounted from a
+  // click inside it -- see openTrigger on ListingsTab/CalendarTab.
+  const [listingAddTrigger, setListingAddTrigger] = useState(0);
+  const [eventAddTrigger, setEventAddTrigger] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -120,6 +126,43 @@ export function DashboardApp({ userId }: { userId: string }) {
       setThemeModeState("light");
     }
   }, []);
+
+  // Same restore-only pattern as theme above.
+  useEffect(() => {
+    const stored = localStorage.getItem("foyer-bottom-nav");
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length === 3) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage on mount
+        setBottomNavSlotsState(parsed as [NavKey, NavKey, NavKey]);
+      }
+    } catch {
+      // Ignore malformed stored value -- default slots stand.
+    }
+  }, []);
+
+  const setBottomNavSlots = (slots: [NavKey, NavKey, NavKey]) => {
+    setBottomNavSlotsState(slots);
+    localStorage.setItem("foyer-bottom-nav", JSON.stringify(slots));
+  };
+
+  const handleQuickAction = (action: QuickAction) => {
+    if (action === "lead") setView("add");
+    else if (action === "listing") {
+      setView("listings");
+      setListingAddTrigger((t) => t + 1);
+      // Clear right after handoff so a later plain visit to Listings (with
+      // the trigger left nonzero) doesn't reopen the add form every time.
+      setTimeout(() => setListingAddTrigger(0), 0);
+    } else if (action === "event") {
+      setView("tasks");
+      setEventAddTrigger((t) => t + 1);
+      setTimeout(() => setEventAddTrigger(0), 0);
+    } else if (action === "file") {
+      setView("files");
+    }
+  };
 
   const setThemeMode = (mode: "dark" | "light") => {
     setThemeModeState(mode);
@@ -697,13 +740,11 @@ export function DashboardApp({ userId }: { userId: string }) {
       <GlobalStyle />
 
       <div className="sticky top-0 z-20" style={{ background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}` }}>
-        {/* Mobile: hamburger + centered logo that shrinks on scroll */}
-        <div className={`sm:hidden flex items-center justify-between px-3 transition-all duration-300 ${scrolled ? "py-1.5" : "py-4"}`}>
-          <MobileNav navItems={NAV_ITEMS} activeView={view} onSelect={setView} kioskHref={`/kiosk/${userId}`} />
+        {/* Mobile: centered logo that shrinks on scroll -- navigation lives in the bottom tab bar */}
+        <div className={`sm:hidden flex items-center justify-center px-3 transition-all duration-300 ${scrolled ? "py-1.5" : "py-4"}`}>
           <div className={`transition-transform duration-300 ${scrolled ? "scale-[0.55]" : "scale-100"}`}>
             <BrandMark size="lg" />
           </div>
-          <span className="w-9 flex-shrink-0" aria-hidden />
         </div>
 
         {/* Desktop: unchanged horizontal nav */}
@@ -734,7 +775,7 @@ export function DashboardApp({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="p-3 sm:p-6">
+      <div className="p-3 pb-28 sm:p-6">
         <div className="max-w-[1800px] mx-auto">
           {error && (
             <div className="mb-4 text-xs px-3 py-2" style={{ background: alpha(COLORS.accentBright, 9), color: COLORS.accentBright, borderRadius: 5 }}>
@@ -782,6 +823,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                     onDelete={deleteListingHandler}
                     onSelectLead={(l) => setSelectedId(l.id)}
                     highlightedListingId={aiActiveTarget}
+                    openTrigger={listingAddTrigger}
                   />
                 </>
               ) : view === "tasks" ? (
@@ -802,6 +844,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                       onAdd={addEvent}
                       onUpdate={updateEventHandler}
                       onDelete={deleteEventHandler}
+                      openTrigger={eventAddTrigger}
                     />
                   </div>
                 </>
@@ -837,7 +880,15 @@ export function DashboardApp({ userId }: { userId: string }) {
                   <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Settings
                   </h1>
-                  <SettingsTab agent={agent} onSave={saveSettings} onSignOut={signOut} themeMode={themeMode} onThemeChange={setThemeMode} />
+                  <SettingsTab
+                    agent={agent}
+                    onSave={saveSettings}
+                    onSignOut={signOut}
+                    themeMode={themeMode}
+                    onThemeChange={setThemeMode}
+                    bottomNavSlots={bottomNavSlots}
+                    onBottomNavSlotsChange={setBottomNavSlots}
+                  />
                 </>
               ) : (
                 <>
@@ -953,6 +1004,20 @@ export function DashboardApp({ userId }: { userId: string }) {
           onDeleteFile={deleteFileForAssistant}
           onConvertFileToPdf={convertFileForAssistant}
           onActionTarget={setAiActiveTarget}
+          open={assistantOpen}
+          onOpenChange={setAssistantOpen}
+          dockedInNav={bottomNavSlots.includes("assistant")}
+        />
+      )}
+      {!loading && (
+        <BottomNav
+          activeView={view}
+          onSelect={(key) => setView(key)}
+          slots={bottomNavSlots}
+          kioskHref={`/kiosk/${userId}`}
+          onQuickAction={handleQuickAction}
+          onOpenAssistant={() => setAssistantOpen(true)}
+          assistantActive={assistantOpen}
         />
       )}
     </div>
