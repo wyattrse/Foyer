@@ -328,6 +328,20 @@ export function LeadDetail({
               ))}
             </select>
           )}
+          {templateId && note && (lead.phone || lead.email) && (
+            <div className="flex gap-3 mb-2 text-xs">
+              {lead.phone && (
+                <a href={`sms:${lead.phone}?body=${encodeURIComponent(note)}`} className="flex items-center gap-1 font-medium" style={{ color: COLORS.accentBright }}>
+                  <MessageCircle size={12} /> Send as text
+                </a>
+              )}
+              {lead.email && (
+                <a href={`mailto:${lead.email}?body=${encodeURIComponent(note)}`} className="flex items-center gap-1 font-medium" style={{ color: COLORS.accentBright }}>
+                  <Mail size={12} /> Send as email
+                </a>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               value={note}

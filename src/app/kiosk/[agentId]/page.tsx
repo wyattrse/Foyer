@@ -26,6 +26,7 @@ export default function KioskPage() {
   const [error, setError] = useState<string | null>(null);
   const [listings, setListings] = useState<KioskListing[]>([]);
   const [listingId, setListingId] = useState<string>("");
+  const [agentInfo, setAgentInfo] = useState<{ name: string; brokerage: string | null } | null>(null);
 
   useEffect(() => {
     fetchKioskListings(supabase, agentId)
@@ -35,6 +36,14 @@ export default function KioskPage() {
       })
       .catch(() => {
         // Non-fatal -- the sign-in form still works without a listing selected.
+      });
+    supabase
+      .from("kiosk_agent_info")
+      .select("name, brokerage")
+      .eq("id", agentId)
+      .single()
+      .then(({ data }) => {
+        if (data) setAgentInfo(data);
       });
   }, [supabase, agentId]);
 
@@ -90,6 +99,12 @@ export default function KioskPage() {
             <p className="text-xs mt-1 uppercase tracking-wide" style={{ color: KIOSK.soft }}>
               Just a few details so we can follow up.
             </p>
+            {agentInfo && (
+              <p className="text-xs mt-2" style={{ color: KIOSK.soft }}>
+                Hosted by {agentInfo.name}
+                {agentInfo.brokerage ? `, ${agentInfo.brokerage}` : ""}
+              </p>
+            )}
           </div>
         )}
 
