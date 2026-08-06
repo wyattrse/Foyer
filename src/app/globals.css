@@ -29,11 +29,11 @@ body {
    <html>. Component code reads these through COLORS in lib/theme.ts, never
    these var names directly. */
 :root {
-  --foyer-bg: #141311;
-  --foyer-surface: #1D1B17;
-  --foyer-surface2: #242119;
-  --foyer-border: #38342A;
-  --foyer-border-strong: #4C4737;
+  --foyer-bg: #151515;
+  --foyer-surface: #1E1E1E;
+  --foyer-surface2: #262626;
+  --foyer-border: #3A3A3A;
+  --foyer-border-strong: #4D4D4D;
   --foyer-ink: #F2EEE4;
   --foyer-ink-soft: #9A927E;
   --foyer-accent: #C63A2E;
