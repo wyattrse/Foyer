@@ -32,7 +32,7 @@ import { CommissionTab } from "@/components/tabs/CommissionTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { ListingsTab } from "@/components/tabs/ListingsTab";
 import { MobileNav } from "@/components/app/MobileNav";
-import { CARD, COLORS, inputStyle } from "@/lib/theme";
+import { CARD, COLORS, alpha, inputStyle } from "@/lib/theme";
 import { STAGES, SOURCES } from "@/lib/constants";
 import { findDuplicateLead, matchesSearch } from "@/lib/scoring";
 import { reorderAndMove } from "@/lib/reorder";
@@ -89,12 +89,31 @@ export function DashboardApp({ userId }: { userId: string }) {
   const [bucketFilter, setBucketFilter] = useState<string>("all");
   const { toasts, pushToast, dismissToast } = useToasts();
   const [scrolled, setScrolled] = useState(false);
+  const [themeMode, setThemeModeState] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Restore-only: reads the saved preference once on mount and applies it.
+  // Actively changing the theme goes through setThemeMode below instead of a
+  // reactive effect, so there's no race between "restore" and "persist".
+  useEffect(() => {
+    const stored = localStorage.getItem("foyer-theme");
+    if (stored === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage on mount, not derivable from props/state
+      setThemeModeState("light");
+    }
+  }, []);
+
+  const setThemeMode = (mode: "dark" | "light") => {
+    setThemeModeState(mode);
+    document.documentElement.setAttribute("data-theme", mode);
+    localStorage.setItem("foyer-theme", mode);
+  };
 
   const refreshLeads = useCallback(async () => {
     try {
@@ -398,7 +417,7 @@ export function DashboardApp({ userId }: { userId: string }) {
       <div className="p-3 sm:p-6">
         <div className="max-w-5xl mx-auto">
           {error && (
-            <div className="mb-4 text-xs px-3 py-2" style={{ background: COLORS.accentBright + "18", color: COLORS.accentBright, borderRadius: 5 }}>
+            <div className="mb-4 text-xs px-3 py-2" style={{ background: alpha(COLORS.accentBright, 9), color: COLORS.accentBright, borderRadius: 5 }}>
               {error}
             </div>
           )}
@@ -470,7 +489,7 @@ export function DashboardApp({ userId }: { userId: string }) {
                   <h1 style={{ fontFamily: "'Fraunces', serif", color: COLORS.ink }} className="text-2xl mb-3 sm:mb-5">
                     Settings
                   </h1>
-                  <SettingsTab agent={agent} onSave={saveSettings} onSignOut={signOut} />
+                  <SettingsTab agent={agent} onSave={saveSettings} onSignOut={signOut} themeMode={themeMode} onThemeChange={setThemeMode} />
                 </>
               ) : (
                 <>

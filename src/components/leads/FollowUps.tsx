@@ -1,5 +1,5 @@
 import { BellRing } from "lucide-react";
-import { CARD_SM, COLORS } from "@/lib/theme";
+import { CARD_SM, COLORS, alpha } from "@/lib/theme";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { dueStatus } from "@/lib/scoring";
 import type { LeadWithStatus } from "@/lib/types";
@@ -36,7 +36,7 @@ export function FollowUps({ leads, onSelect }: { leads: LeadWithStatus[]; onSele
             key={lead.id}
             onClick={() => onSelect(lead)}
             className="mark anim-fadeup w-full flex items-center gap-3 p-3.5 text-left"
-            style={{ ...CARD_SM, borderColor: status === "overdue" ? COLORS.accentBright + "70" : COLORS.border, animationDelay: `${idx * 35}ms` }}
+            style={{ ...CARD_SM, borderColor: status === "overdue" ? alpha(COLORS.accentBright, 44) : COLORS.border, animationDelay: `${idx * 35}ms` }}
           >
             <ScoreRing score={lead.effective_score} size={36} />
             <div className="flex-1 min-w-0">

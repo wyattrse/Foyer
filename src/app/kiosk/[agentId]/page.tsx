@@ -10,7 +10,7 @@ import { GlobalStyle } from "@/components/ui/GlobalStyle";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { QRPlaceholder } from "@/components/ui/QRPlaceholder";
 import { LeadForm } from "@/components/leads/LeadForm";
-import { COLORS, KIOSK, inputStyle } from "@/lib/theme";
+import { COLORS, KIOSK, alpha, inputStyle } from "@/lib/theme";
 import type { KioskListing, LeadFormValues } from "@/lib/types";
 
 // Genuinely unauthenticated route -- no session, no read access to anything.
@@ -125,7 +125,7 @@ export default function KioskPage() {
 
         {thanks ? (
           <div className="anim-popin flex flex-col items-center text-center p-10" style={kCard}>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4" style={{ background: COLORS.accent + "18" }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4" style={{ background: alpha(COLORS.accent, 9) }}>
               <Check size={22} style={{ color: COLORS.accent }} />
             </div>
             <h2 style={{ fontFamily: "'Fraunces', serif", color: KIOSK.ink }} className="text-xl mb-1">
@@ -142,7 +142,7 @@ export default function KioskPage() {
         )}
 
         {error && (
-          <div className="mt-4 text-xs px-3 py-2 text-center" style={{ background: COLORS.accent + "18", color: COLORS.accent, borderRadius: 5 }}>
+          <div className="mt-4 text-xs px-3 py-2 text-center" style={{ background: alpha(COLORS.accent, 9), color: COLORS.accent, borderRadius: 5 }}>
             {error}
           </div>
         )}

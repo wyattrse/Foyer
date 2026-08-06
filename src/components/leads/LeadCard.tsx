@@ -1,5 +1,5 @@
 import { AlertCircle, GripVertical, Pencil } from "lucide-react";
-import { CARD_SM, COLORS } from "@/lib/theme";
+import { CARD_SM, COLORS, alpha } from "@/lib/theme";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { dueStatus } from "@/lib/scoring";
 import type { LeadWithStatus } from "@/lib/types";
@@ -21,7 +21,7 @@ export function LeadCard({
       {...dragProps}
       onClick={onClick}
       className="mark anim-fadeup w-full text-left p-4 sm:p-3.5 mb-2.5 cursor-pointer"
-      style={{ ...CARD_SM, borderColor: status === "overdue" ? COLORS.accentBright + "70" : COLORS.border, animationDelay: `${delay}ms` }}
+      style={{ ...CARD_SM, borderColor: status === "overdue" ? alpha(COLORS.accentBright, 44) : COLORS.border, animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-3">
         <ScoreRing score={lead.effective_score} size={42} />

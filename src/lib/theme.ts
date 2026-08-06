@@ -1,17 +1,26 @@
-// ---------- design tokens: Modernist / Swiss dark ----------
+// ---------- design tokens: Modernist / Swiss (dark by default, light via
+// [data-theme="light"] on <html> -- see globals.css for the actual values).
+// Values are CSS var() refs so every component using COLORS.x re-themes for
+// free; use alpha() instead of string-concatenating a hex suffix onto these.
 export const COLORS = {
-  bg: "#141311",
-  surface: "#1D1B17",
-  surface2: "#242119",
-  border: "#38342A",
-  borderStrong: "#4C4737",
-  ink: "#F2EEE4",
-  inkSoft: "#9A927E",
-  accent: "#C63A2E",
-  accentBright: "#E2543E",
-  warm: "#D9A44E",
-  cold: "#7C8894",
+  bg: "var(--foyer-bg)",
+  surface: "var(--foyer-surface)",
+  surface2: "var(--foyer-surface2)",
+  border: "var(--foyer-border)",
+  borderStrong: "var(--foyer-border-strong)",
+  ink: "var(--foyer-ink)",
+  inkSoft: "var(--foyer-ink-soft)",
+  accent: "var(--foyer-accent)",
+  accentBright: "var(--foyer-accent-bright)",
+  warm: "var(--foyer-warm)",
+  cold: "var(--foyer-cold)",
 };
+
+// Replaces the old `COLORS.x + "18"` hex-alpha-suffix pattern, which breaks
+// once COLORS.x is a var() reference instead of a literal hex string.
+export function alpha(color: string, percent: number) {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+}
 
 // Client-facing kiosk is deliberately inverted from the dark agent app --
 // light and warm, since a stranger walking up shouldn't meet a black screen.
@@ -48,8 +57,8 @@ export const inputStyle = {
 export const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@500;700&display=swap');
   * { box-sizing: border-box; }
-  ::selection { background: ${COLORS.accent}55; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: ${COLORS.accent} !important; box-shadow: 0 0 0 2px ${COLORS.accent}33; }
+  ::selection { background: ${alpha(COLORS.accent, 33)}; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: ${COLORS.accent} !important; box-shadow: 0 0 0 2px ${alpha(COLORS.accent, 20)}; }
   button:focus-visible { outline: 2px solid ${COLORS.accent}; outline-offset: 2px; }
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px);} to {opacity:1; transform:translateY(0);} }
   @keyframes slideInRight { from { opacity:0; transform: translateX(28px);} to {opacity:1; transform:translateX(0);} }

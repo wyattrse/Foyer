@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { COLORS } from "@/lib/theme";
+import { COLORS, alpha } from "@/lib/theme";
 
 export function Pill({ children, color }: { children: ReactNode; color: string }) {
   return (
     <span
       className="px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
-      style={{ background: color + "1F", color, border: `1px solid ${color}55`, borderRadius: 4 }}
+      style={{ background: alpha(color, 12), color, border: `1px solid ${alpha(color, 33)}`, borderRadius: 4 }}
     >
       {children}
     </span>

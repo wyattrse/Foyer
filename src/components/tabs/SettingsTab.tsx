@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { CARD, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
 import type { Agent } from "@/lib/types";
@@ -12,10 +13,14 @@ export function SettingsTab({
   agent,
   onSave,
   onSignOut,
+  themeMode,
+  onThemeChange,
 }: {
   agent: Agent;
   onSave: (patch: { name: string; brokerage: string; commission_split: number }) => void;
   onSignOut: () => void;
+  themeMode: "dark" | "light";
+  onThemeChange: (mode: "dark" | "light") => void;
 }) {
   const [form, setForm] = useState({
     name: agent.name,
@@ -56,6 +61,37 @@ export function SettingsTab({
       <p className="text-xs mt-4" style={{ color: COLORS.inkSoft }}>
         Multi-agent sign-in and team profiles are on the roadmap. For now this just personalizes your own dashboard.
       </p>
+
+      <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <FieldLabel>Appearance</FieldLabel>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onThemeChange("dark")}
+            className="press flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-wide"
+            style={{
+              color: themeMode === "dark" ? "#FBF3EF" : COLORS.inkSoft,
+              background: themeMode === "dark" ? COLORS.accent : COLORS.surface2,
+              border: `1px solid ${themeMode === "dark" ? COLORS.accent : COLORS.border}`,
+              borderRadius: 5,
+            }}
+          >
+            <Moon size={13} /> Dark
+          </button>
+          <button
+            onClick={() => onThemeChange("light")}
+            className="press flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-wide"
+            style={{
+              color: themeMode === "light" ? "#FBF3EF" : COLORS.inkSoft,
+              background: themeMode === "light" ? COLORS.accent : COLORS.surface2,
+              border: `1px solid ${themeMode === "light" ? COLORS.accent : COLORS.border}`,
+              borderRadius: 5,
+            }}
+          >
+            <Sun size={13} /> Light
+          </button>
+        </div>
+      </div>
+
       <button onClick={onSignOut} className="mt-6 text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
         Sign out
       </button>

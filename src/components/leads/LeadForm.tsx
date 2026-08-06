@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { COLORS, KIOSK, CARD_SM, inputStyle } from "@/lib/theme";
+import { COLORS, KIOSK, CARD_SM, alpha, inputStyle } from "@/lib/theme";
 import { AGENT_OPTIONS, SOURCES, TIMELINE_OPTIONS } from "@/lib/constants";
 import { PrimaryButton } from "@/components/ui/Basics";
 import type { LeadFormValues, LeadWithStatus } from "@/lib/types";
@@ -151,7 +151,7 @@ export function LeadForm({
       </div>
 
       {dup && (
-        <div className="p-3 text-xs" style={{ ...CARD_SM, borderColor: COLORS.accent + "80" }}>
+        <div className="p-3 text-xs" style={{ ...CARD_SM, borderColor: alpha(COLORS.accent, 50) }}>
           <p style={{ color: COLORS.ink }}>
             This might already be <strong>{dup.name}</strong> ({dup.phone || dup.email}), added {new Date(dup.created_at).toLocaleDateString()}.
           </p>
