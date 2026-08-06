@@ -740,8 +740,13 @@ export function DashboardApp({ userId }: { userId: string }) {
       <GlobalStyle />
 
       <div className="sticky top-0 z-20" style={{ background: COLORS.surface, borderBottom: `1px solid ${COLORS.border}` }}>
-        {/* Mobile: centered logo that shrinks on scroll -- navigation lives in the bottom tab bar */}
-        <div className={`sm:hidden flex items-center justify-center px-3 transition-all duration-300 ${scrolled ? "py-1.5" : "py-4"}`}>
+        {/* Mobile: centered logo that shrinks on scroll -- navigation lives in the bottom tab bar.
+            paddingTop never goes below the safe area, so the logo can't land under a notch/Dynamic
+            Island regardless of scroll state; the shrink animation still reads via the scale below. */}
+        <div
+          className={`sm:hidden flex items-center justify-center px-3 transition-all duration-300 ${scrolled ? "pb-1.5" : "pb-4"}`}
+          style={{ paddingTop: scrolled ? "max(6px, env(safe-area-inset-top))" : "max(16px, env(safe-area-inset-top))" }}
+        >
           <div className={`transition-transform duration-300 ${scrolled ? "scale-[0.55]" : "scale-100"}`}>
             <BrandMark size="lg" />
           </div>
