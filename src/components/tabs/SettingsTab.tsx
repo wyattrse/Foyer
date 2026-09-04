@@ -28,7 +28,7 @@ export function SettingsTab({
   onBottomNavSlotsChange,
 }: {
   agent: Agent;
-  onSave: (patch: { name: string; brokerage: string; commission_split: number }) => void;
+  onSave: (patch: { name: string; brokerage: string; commission_split: number; phone: string; email: string }) => void;
   onSignOut: () => void;
   themeMode: "dark" | "light";
   onThemeChange: (mode: "dark" | "light") => void;
@@ -41,6 +41,8 @@ export function SettingsTab({
     name: agent.name,
     brokerage: agent.brokerage || "",
     commission_split: agent.commission_split,
+    phone: agent.phone || "",
+    email: agent.email || "",
   });
 
   return (
@@ -68,6 +70,30 @@ export function SettingsTab({
             className="w-full px-3 py-2.5 text-sm outline-none"
             style={inputStyle}
           />
+        </div>
+        <div className="pt-2">
+          <FieldLabel>Contact card (shown on your Open House QR code)</FieldLabel>
+          <p className="text-xs mb-2" style={{ color: COLORS.inkSoft }}>
+            Visitors scan the kiosk QR to save you as a contact. Fill these in so it&apos;s more than just your name.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              type="tel"
+              placeholder="Phone"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              className="w-full px-3 py-2.5 text-sm outline-none"
+              style={inputStyle}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              className="w-full px-3 py-2.5 text-sm outline-none"
+              style={inputStyle}
+            />
+          </div>
         </div>
       </div>
       <PrimaryButton onClick={() => onSave(form)} className="mt-4 px-4">

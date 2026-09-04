@@ -708,9 +708,15 @@ export function DashboardApp({ userId }: { userId: string }) {
     }
   };
 
-  const saveSettings = async (patch: { name: string; brokerage: string; commission_split: number }) => {
+  const saveSettings = async (patch: { name: string; brokerage: string; commission_split: number; phone: string; email: string }) => {
     try {
-      const updated = await agentApi.updateAgent(supabase, userId, patch);
+      const updated = await agentApi.updateAgent(supabase, userId, {
+        name: patch.name,
+        brokerage: patch.brokerage,
+        commission_split: patch.commission_split,
+        phone: patch.phone.trim() || null,
+        email: patch.email.trim() || null,
+      });
       setAgent(updated);
       pushToast({ message: "Saved", duration: 1800 });
     } catch {

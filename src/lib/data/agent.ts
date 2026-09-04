@@ -10,7 +10,7 @@ export async function fetchAgent(supabase: SupabaseClient, id: string): Promise<
 export async function updateAgent(
   supabase: SupabaseClient,
   id: string,
-  patch: { name?: string; brokerage?: string; commission_split?: number },
+  patch: { name?: string; brokerage?: string; commission_split?: number; phone?: string | null; email?: string | null },
 ): Promise<Agent> {
   const { data, error } = await supabase.from("agents").update(patch).eq("id", id).select().single();
   if (error) throw error;

@@ -17,6 +17,8 @@ export interface Agent {
   name: string;
   brokerage: string | null;
   brokerage_id: string | null;
+  phone: string | null;
+  email: string | null;
   role: "agent" | "admin";
   commission_split: number;
   created_at: string;

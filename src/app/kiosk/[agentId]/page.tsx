@@ -8,9 +8,10 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchKioskListings } from "@/lib/data/listings";
 import { GlobalStyle } from "@/components/ui/GlobalStyle";
 import { BrandMark } from "@/components/ui/BrandMark";
-import { QRPlaceholder } from "@/components/ui/QRPlaceholder";
+import { QRCode } from "@/components/ui/QRCode";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { COLORS, KIOSK, alpha, inputStyle } from "@/lib/theme";
+import { buildAgentVCard } from "@/lib/vcard";
 import type { KioskListing, LeadFormValues } from "@/lib/types";
 
 // Genuinely unauthenticated route -- no session, no read access to anything.
@@ -26,7 +27,7 @@ export default function KioskPage() {
   const [error, setError] = useState<string | null>(null);
   const [listings, setListings] = useState<KioskListing[]>([]);
   const [listingId, setListingId] = useState<string>("");
-  const [agentInfo, setAgentInfo] = useState<{ name: string; brokerage: string | null } | null>(null);
+  const [agentInfo, setAgentInfo] = useState<{ name: string; brokerage: string | null; phone: string | null; email: string | null } | null>(null);
 
   useEffect(() => {
     fetchKioskListings(supabase, agentId)
@@ -39,7 +40,7 @@ export default function KioskPage() {
       });
     supabase
       .from("kiosk_agent_info")
-      .select("name, brokerage")
+      .select("name, brokerage, phone, email")
       .eq("id", agentId)
       .single()
       .then(({ data }) => {
@@ -116,16 +117,17 @@ export default function KioskPage() {
         )}
 
         {!thanks && (
-          <div className="flex flex-col items-center mb-6 p-5" style={kCard}>
-            <QRPlaceholder size={130} light={KIOSK.surface} dark={KIOSK.ink} />
-            <p className="text-xs mt-3 text-center" style={{ color: KIOSK.ink }}>
-              Scan to save my contact card
-            </p>
-            <p className="text-[10px] mt-1 uppercase tracking-wide" style={{ color: COLORS.accent }}>
-              Placeholder — swap in your real QR
-            </p>
+          <div className="flex flex-col items-center mb-6 p-6" style={kCard}>
+            {agentInfo && (
+              <>
+                <QRCode value={buildAgentVCard(agentInfo)} size={240} light={KIOSK.surface} dark={KIOSK.ink} />
+                <p className="text-sm font-semibold mt-4 text-center" style={{ color: KIOSK.ink }}>
+                  Scan to save my contact card
+                </p>
+              </>
+            )}
             {listings.length === 1 && (
-              <p className="text-sm font-semibold text-center mt-3 pt-3 w-full" style={{ color: KIOSK.ink, borderTop: `1px solid ${KIOSK.border}` }}>
+              <p className="text-sm font-semibold text-center mt-4 pt-4 w-full" style={{ color: KIOSK.ink, borderTop: `1px solid ${KIOSK.border}` }}>
                 {listings[0].address}
               </p>
             )}
