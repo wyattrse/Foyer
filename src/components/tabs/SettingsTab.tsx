@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Moon, Sun } from "lucide-react";
-import { CARD, COLORS, inputStyle } from "@/lib/theme";
+import { useRef, useState } from "react";
+import { Moon, Sun, Upload, Check, Copy, ExternalLink } from "lucide-react";
+import { CARD, CARD_SM, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
 import { NAV_DESTINATIONS, type NavKey } from "@/components/app/BottomNav";
 import type { Agent } from "@/lib/types";
@@ -26,6 +26,8 @@ export function SettingsTab({
   onUiScaleChange,
   bottomNavSlots,
   onBottomNavSlotsChange,
+  onUploadPhoto,
+  onUploadLogo,
 }: {
   agent: Agent;
   onSave: (patch: { name: string; brokerage: string; commission_split: number; phone: string; email: string }) => void;
@@ -36,6 +38,8 @@ export function SettingsTab({
   onUiScaleChange: (scale: "small" | "medium" | "large") => void;
   bottomNavSlots: [NavKey, NavKey, NavKey];
   onBottomNavSlotsChange: (slots: [NavKey, NavKey, NavKey]) => void;
+  onUploadPhoto: (file: File) => Promise<void>;
+  onUploadLogo: (file: File) => Promise<void>;
 }) {
   const [form, setForm] = useState({
     name: agent.name,
@@ -44,12 +48,78 @@ export function SettingsTab({
     phone: agent.phone || "",
     email: agent.email || "",
   });
+  const [uploading, setUploading] = useState<"photo" | "logo" | null>(null);
+  const [copied, setCopied] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card/${agent.id}` : `/card/${agent.id}`;
+
+  const handleUpload = async (kind: "photo" | "logo", file: File | undefined) => {
+    if (!file) return;
+    setUploading(kind);
+    try {
+      await (kind === "photo" ? onUploadPhoto(file) : onUploadLogo(file));
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const copyCardUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(cardUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard permission denied or unavailable -- the link is still
+      // visible and selectable, so this isn't fatal.
+    }
+  };
 
   return (
     <div className="max-w-md p-6" style={CARD}>
       <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: COLORS.accentBright }}>
         Your profile
       </p>
+
+      <div className="flex items-center gap-4 mb-5">
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={() => photoInputRef.current?.click()}
+            className="press w-16 h-16 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            {agent.photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- agent-controlled Storage URL, not an optimizable static asset
+              <img src={agent.photo_url} alt="Your photo" className="w-full h-full object-cover" />
+            ) : (
+              <Upload size={18} style={{ color: COLORS.inkSoft }} />
+            )}
+          </button>
+          <span className="text-[10px] uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
+            {uploading === "photo" ? "Uploading…" : "Photo"}
+          </span>
+          <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload("photo", e.target.files?.[0])} />
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={() => logoInputRef.current?.click()}
+            className="press w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+            style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
+          >
+            {agent.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- agent-controlled Storage URL, not an optimizable static asset
+              <img src={agent.logo_url} alt="Brokerage logo" className="w-full h-full object-contain p-1.5" />
+            ) : (
+              <Upload size={18} style={{ color: COLORS.inkSoft }} />
+            )}
+          </button>
+          <span className="text-[10px] uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
+            {uploading === "logo" ? "Uploading…" : "Brokerage logo"}
+          </span>
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload("logo", e.target.files?.[0])} />
+        </div>
+      </div>
+
       <div className="space-y-3">
         <div>
           <FieldLabel>Your name</FieldLabel>
@@ -102,6 +172,24 @@ export function SettingsTab({
       <p className="text-xs mt-4" style={{ color: COLORS.inkSoft }}>
         Multi-agent sign-in and team profiles are on the roadmap. For now this just personalizes your own dashboard.
       </p>
+
+      <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <FieldLabel>Digital business card</FieldLabel>
+        <p className="text-xs mb-3" style={{ color: COLORS.inkSoft }}>
+          A shareable page with your photo, brokerage, and a Save Contact button — text it, email it, or drop it in your signature.
+        </p>
+        <div className="flex items-center gap-2 mb-2 p-2.5" style={{ ...CARD_SM, overflow: "hidden" }}>
+          <span className="flex-1 text-xs truncate" style={{ color: COLORS.inkSoft }}>
+            {cardUrl}
+          </span>
+          <button onClick={copyCardUrl} title="Copy link" className="press flex-shrink-0" style={{ color: copied ? COLORS.accent : COLORS.inkSoft }}>
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+          </button>
+          <a href={`/card/${agent.id}`} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="press flex-shrink-0" style={{ color: COLORS.inkSoft }}>
+            <ExternalLink size={15} />
+          </a>
+        </div>
+      </div>
 
       <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
         <FieldLabel>Appearance</FieldLabel>

@@ -730,6 +730,26 @@ export function DashboardApp({ userId }: { userId: string }) {
     router.refresh();
   };
 
+  const uploadAgentPhoto = async (file: File) => {
+    try {
+      const url = await agentApi.uploadAgentAsset(supabase, userId, "photo", file);
+      const updated = await agentApi.updateAgent(supabase, userId, { photo_url: url });
+      setAgent(updated);
+    } catch {
+      setError("Couldn't upload your photo — try again.");
+    }
+  };
+
+  const uploadAgentLogo = async (file: File) => {
+    try {
+      const url = await agentApi.uploadAgentAsset(supabase, userId, "logo", file);
+      const updated = await agentApi.updateAgent(supabase, userId, { logo_url: url });
+      setAgent(updated);
+    } catch {
+      setError("Couldn't upload your logo — try again.");
+    }
+  };
+
   const filteredLeads = useMemo(
     () => leads.filter((l) => matchesSearch(l, search) && (bucketFilter === "all" || l.bucket === bucketFilter)),
     [leads, search, bucketFilter],
@@ -919,6 +939,8 @@ export function DashboardApp({ userId }: { userId: string }) {
                     onUiScaleChange={setUiScale}
                     bottomNavSlots={bottomNavSlots}
                     onBottomNavSlotsChange={setBottomNavSlots}
+                    onUploadPhoto={uploadAgentPhoto}
+                    onUploadLogo={uploadAgentLogo}
                   />
                 </>
               ) : (

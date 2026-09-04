@@ -19,6 +19,8 @@ export interface Agent {
   brokerage_id: string | null;
   phone: string | null;
   email: string | null;
+  photo_url: string | null;
+  logo_url: string | null;
   role: "agent" | "admin";
   commission_split: number;
   created_at: string;
