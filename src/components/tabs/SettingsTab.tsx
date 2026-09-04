@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Moon, Sun, Upload, Check, Copy, ExternalLink } from "lucide-react";
 import { CARD, CARD_SM, COLORS, inputStyle } from "@/lib/theme";
 import { PrimaryButton, FieldLabel } from "@/components/ui/Basics";
+import { ImageCropModal } from "@/components/ui/ImageCropModal";
 import { NAV_DESTINATIONS, type NavKey } from "@/components/app/BottomNav";
 import type { Agent } from "@/lib/types";
 
@@ -50,15 +51,16 @@ export function SettingsTab({
   });
   const [uploading, setUploading] = useState<"photo" | "logo" | null>(null);
   const [copied, setCopied] = useState(false);
+  const [cropTarget, setCropTarget] = useState<{ kind: "photo" | "logo"; file: File } | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card/${agent.id}` : `/card/${agent.id}`;
 
-  const handleUpload = async (kind: "photo" | "logo", file: File | undefined) => {
-    if (!file) return;
+  const handleUpload = async (kind: "photo" | "logo", file: File | Blob) => {
     setUploading(kind);
     try {
-      await (kind === "photo" ? onUploadPhoto(file) : onUploadLogo(file));
+      const asFile = file instanceof File ? file : new File([file], `${kind}.png`, { type: "image/png" });
+      await (kind === "photo" ? onUploadPhoto(asFile) : onUploadLogo(asFile));
     } finally {
       setUploading(null);
     }
@@ -98,17 +100,27 @@ export function SettingsTab({
           <span className="text-[10px] uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
             {uploading === "photo" ? "Uploading…" : "Photo"}
           </span>
-          <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload("photo", e.target.files?.[0])} />
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setCropTarget({ kind: "photo", file });
+              e.target.value = "";
+            }}
+          />
         </div>
         <div className="flex flex-col items-center gap-1.5">
           <button
             onClick={() => logoInputRef.current?.click()}
-            className="press w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+            className="press w-24 h-10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
             style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
           >
             {agent.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element -- agent-controlled Storage URL, not an optimizable static asset
-              <img src={agent.logo_url} alt="Brokerage logo" className="w-full h-full object-contain p-1.5" />
+              <img src={agent.logo_url} alt="Brokerage logo" className="w-full h-full object-contain p-1" />
             ) : (
               <Upload size={18} style={{ color: COLORS.inkSoft }} />
             )}
@@ -116,7 +128,17 @@ export function SettingsTab({
           <span className="text-[10px] uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
             {uploading === "logo" ? "Uploading…" : "Brokerage logo"}
           </span>
-          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload("logo", e.target.files?.[0])} />
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setCropTarget({ kind: "logo", file });
+              e.target.value = "";
+            }}
+          />
         </div>
       </div>
 
@@ -276,6 +298,20 @@ export function SettingsTab({
       <button onClick={onSignOut} className="mt-6 text-xs uppercase tracking-wide" style={{ color: COLORS.inkSoft }}>
         Sign out
       </button>
+
+      {cropTarget && (
+        <ImageCropModal
+          file={cropTarget.file}
+          aspect={cropTarget.kind === "photo" ? 1 : 2.4}
+          shape={cropTarget.kind === "photo" ? "circle" : "rect"}
+          title={cropTarget.kind === "photo" ? "Frame your photo" : "Frame your logo"}
+          onCancel={() => setCropTarget(null)}
+          onConfirm={(blob) => {
+            handleUpload(cropTarget.kind, blob);
+            setCropTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }

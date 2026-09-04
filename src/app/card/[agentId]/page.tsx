@@ -72,9 +72,12 @@ export default function DigitalCardPage() {
     URL.revokeObjectURL(url);
   };
 
+  // Logos are pre-framed to a 2.4:1 crop in Settings, so this just displays
+  // them at that same aspect -- no background chip or border, since that
+  // read as a box squeezing the logo down rather than framing it.
   const logoChip = (sizeClass: string) =>
     agent?.logo_url && (
-      <div className={`${sizeClass} flex-shrink-0 flex items-center justify-center p-1.5`} style={{ background: "#F2EEE4", borderRadius: 6 }}>
+      <div className={`${sizeClass} flex-shrink-0 flex items-center justify-center`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- agent-controlled Storage URL, not an optimizable static asset */}
         <img src={agent.logo_url} alt={`${agent.brokerage ?? "Brokerage"} logo`} className="max-w-full max-h-full object-contain" />
       </div>
@@ -133,7 +136,7 @@ export default function DigitalCardPage() {
                 {agent.brokerage}
               </p>
             )}
-            {logoChip("w-20 h-12 mt-4")}
+            {logoChip("w-32 h-14 mt-4")}
 
             <div className="w-full mt-6 pt-6 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
               {agent.phone && (
@@ -198,7 +201,7 @@ export default function DigitalCardPage() {
                   </p>
                 )}
               </div>
-              {logoChip("w-28 h-16")}
+              {logoChip("w-44 h-[4.6rem]")}
             </div>
 
             <div className="mt-8 pt-8 space-y-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
